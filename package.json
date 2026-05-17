@@ -12,7 +12,9 @@
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
-    "gen:bindings": "cargo test --manifest-path src-tauri/Cargo.toml export_bindings -- --nocapture"
+    "gen:bindings": "cargo test --manifest-path src-tauri/Cargo.toml export_bindings -- --nocapture",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.100.10",
@@ -36,9 +38,12 @@
     "@types/node": "^25.8.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.2",
     "eslint": "9",
     "eslint-config-next": "15",
+    "jsdom": "^29.1.1",
     "tailwindcss": "4",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.6"
   }
 }
