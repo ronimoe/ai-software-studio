@@ -1,0 +1,20 @@
+{
+  "name": "ai-software-studio",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "gen:bindings": "cargo test --manifest-path src-tauri/Cargo.toml export_bindings -- --nocapture"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "packageManager": "pnpm@9.12.0"
+}
