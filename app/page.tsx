@@ -1,36 +1,34 @@
 "use client";
 
 import { DashboardShell } from "@/components/layout/dashboard-shell";
-import { PanelFrame } from "@/components/layout/panel-frame";
-
-function Placeholder({ name }: { name: string }) {
-  return (
-    <PanelFrame title={name} badge="WIP">
-      <p className="text-sm text-muted-foreground">Panel content arrives in the next task.</p>
-    </PanelFrame>
-  );
-}
+import { TaskBoardPanel } from "@/components/panels/task-board";
+import { EngineeringSnapshotPanel } from "@/components/panels/engineering-snapshot";
+import { AgentWorkspacePanel } from "@/components/panels/agent-workspace";
+import { ReviewRoomPanel } from "@/components/panels/review-room";
+import { ContextGraphPanel } from "@/components/panels/context-graph";
+import { ConversationPanel } from "@/components/panels/conversation";
+import { AgentManagerPanel } from "@/components/panels/agent-manager";
 
 export default function HomePage() {
   return (
     <DashboardShell
       left={
         <>
-          <Placeholder name="Task Board" />
-          <Placeholder name="Engineering Snapshot" />
+          <TaskBoardPanel />
+          <EngineeringSnapshotPanel />
         </>
       }
       center={
         <>
-          <Placeholder name="Agent Workspace" />
-          <Placeholder name="Review Room" />
+          <AgentWorkspacePanel />
+          <ReviewRoomPanel />
         </>
       }
       right={
         <>
-          <Placeholder name="Context Graph" />
-          <Placeholder name="Conversation" />
-          <Placeholder name="Agent Manager" />
+          <ContextGraphPanel />
+          <ConversationPanel />
+          <AgentManagerPanel />
         </>
       }
     />
