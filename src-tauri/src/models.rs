@@ -80,7 +80,7 @@ pub enum VerificationStatus { NotRun, Running, Passed, Failed, Skipped, Warning 
 pub struct VerificationCheck {
     pub kind: String,
     pub status: VerificationStatus,
-    pub duration_ms: Option<u64>,
+    pub duration_ms: Option<u32>,
     pub log_excerpt: Option<String>,
 }
 
