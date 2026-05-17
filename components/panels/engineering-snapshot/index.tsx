@@ -2,7 +2,7 @@
 
 import { ArrowDown, ArrowUp, Minus } from "lucide-react";
 import { PanelFrame } from "@/components/layout/panel-frame";
-import { mockSnapshot } from "@/lib/mock-data";
+import { useSnapshot } from "@/features/snapshot/use-snapshot";
 
 const trendIcon = {
   up: <ArrowUp className="h-3 w-3 text-success" />,
@@ -11,9 +11,10 @@ const trendIcon = {
 };
 
 export function EngineeringSnapshotPanel() {
+  const { data: metrics = [] } = useSnapshot();
   return (
     <PanelFrame title="Engineering Snapshot" bodyClassName="space-y-2">
-      {mockSnapshot.map((m) => (
+      {metrics.map((m) => (
         <div
           key={m.label}
           className="flex items-center justify-between rounded-md border border-border/40 bg-muted/40 px-3 py-2"

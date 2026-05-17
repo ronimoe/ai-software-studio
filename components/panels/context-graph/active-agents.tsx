@@ -2,17 +2,18 @@
 
 import { Badge } from "@/components/ui/badge";
 import { useEngines } from "@/features/engines/use-engines";
-import { mockActiveAgents } from "@/lib/mock-data";
+import { useActiveAgents } from "@/features/engines/use-active-agents";
 
 export function ActiveAgents() {
   const { data: engines = [] } = useEngines();
+  const { data: activeAgents = [] } = useActiveAgents();
   return (
     <div className="space-y-1.5">
       <h4 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         Active Agents
       </h4>
       {engines.map((e) => {
-        const agent = mockActiveAgents.find((a) => a.engineId === e.id);
+        const agent = activeAgents.find((a) => a.engineId === e.id);
         return (
           <div
             key={e.id}

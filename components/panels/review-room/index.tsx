@@ -24,7 +24,7 @@ export function ReviewRoomPanel() {
             ))}
           </div>
         )}
-        <EvidenceArtifacts />
+        <EvidenceArtifacts run={latest} />
       </div>
     </PanelFrame>
   );

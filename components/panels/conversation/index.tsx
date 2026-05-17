@@ -2,7 +2,8 @@
 
 import { cn } from "@/lib/utils";
 import { PanelFrame } from "@/components/layout/panel-frame";
-import { mockConversation } from "@/lib/mock-data";
+import { useConversation } from "@/features/conversation/use-conversation";
+import { useUiStore } from "@/stores/ui-store";
 
 const authorColor = {
   user: "border-primary/40 bg-primary/10",
@@ -11,9 +12,11 @@ const authorColor = {
 };
 
 export function ConversationPanel() {
+  const activeTaskId = useUiStore((s) => s.activeTaskId);
+  const { data: messages = [] } = useConversation(activeTaskId);
   return (
     <PanelFrame title="Comment / Conversation" badge="Timeline" bodyClassName="space-y-2">
-      {mockConversation.map((m) => (
+      {messages.map((m) => (
         <div key={m.id} className={cn("rounded-md border p-2.5 text-xs", authorColor[m.author])}>
           <div className="mb-1 flex items-center justify-between text-[10px] text-muted-foreground">
             <span className="font-medium">{m.authorName}</span>
