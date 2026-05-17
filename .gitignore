@@ -37,3 +37,8 @@ Thumbs.db
 
 # Tauri build output
 src-tauri/gen/
+
+# AI coding agent context (kept local, not published)
+CLAUDE.md
+.claude/
+
