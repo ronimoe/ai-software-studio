@@ -132,7 +132,7 @@ For new features, run `pnpm typecheck && pnpm lint && pnpm test` before pushing.
 
 ## License
 
-[MIT](./LICENSE) © ronimoe
+[MIT](./LICENSE) © Roni Moe
 
 ---
 
