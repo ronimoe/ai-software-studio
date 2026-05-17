@@ -1,51 +1,141 @@
+<div align="center">
+
 # AI Software Studio
 
-**AI Software Studio is a local-first desktop application that lets developers assign coding tasks to local AI agents such as Claude Code and Codex CLI, monitor their work, verify results, review evidence, and approve changes safely.**
+**A local-first command center for AI coding agents.**
+Delegate tasks to Claude Code and Codex CLI. Watch them work in isolated git worktrees. Review verified evidence — not vibes — before you approve.
 
-## Overview
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![Status: pre-MVP](https://img.shields.io/badge/status-pre--MVP-orange.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.0.1-lightgrey.svg)](./VERSION)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-success.svg)](#prerequisites)
+[![Stack](https://img.shields.io/badge/stack-Tauri%20%C2%B7%20Rust%20%C2%B7%20Next.js-black.svg)](#stack)
 
-AI Software Studio turns local AI coding agents into a structured engineering workflow. It provides the missing workflow layer for local AI coding agents, moving from an unstructured chat/terminal experience to a controlled, evidence-backed process.
+![AI Software Studio dashboard](./ui.png)
 
-The key shift:
-- **Old workflow:** Human asks AI to edit code → AI modifies files → human manually inspects everything.
-- **AI Software Studio:** Human defines task and constraints → agent works in isolated worktree → app captures output, diff, tests, and risks → human reviews evidence → human approves or rejects.
+</div>
+
+---
+
+## Why
+
+Coding with a local AI agent today looks like this:
+
+> You ask an AI to edit your code. It edits files in your working tree. You read what it tells you. You hope it's true.
+
+That's not a software development workflow — that's faith.
+
+**AI Software Studio** is the workflow layer that's been missing:
+
+```text
+Task  →  Constraints  →  Isolated git worktree  →  Agent execution
+      →  Captured terminal & diff  →  Independent verification
+      →  Review room with evidence  →  Human approval  →  PR report
+```
+
+The agent does the work. The app captures the proof. **You decide what ships.**
+
+## Principles
+
+- 🏠 **Local-first.** The core product runs on your machine. No hosted backend required.
+- 🔑 **No provider tokens stored.** Claude Code and Codex CLI handle their own auth. The app never sees your API keys.
+- 🧪 **Evidence over claims.** "Tests pass" doesn't count until the app reruns them itself.
+- 🌳 **Isolated by default.** Every task gets a fresh git worktree. Your main branch is sacred.
+- 🤝 **Human-approved.** Agents execute; humans own intent, review, and the merge button.
+- 🔌 **Engine-agnostic.** Claude Code and Codex CLI to start. The adapter layer is built for more.
+
+## How it works
+
+| Step | What you do | What the app does |
+|---|---|---|
+| **1. Frame** | Write a task, acceptance criteria, constraints | Persists structured task in SQLite |
+| **2. Isolate** | Pick an engine | `git worktree add` on a fresh branch |
+| **3. Run** | Hit Start | Spawns Claude Code / Codex inside the worktree, streams output |
+| **4. Verify** | (Automatic) | Runs your project's test / lint / typecheck / build commands |
+| **5. Review** | Read the evidence | Shows diff, changed files, verification results, risk flags |
+| **6. Decide** | Approve / request changes / reject | Generates a PR-ready evidence report |
+
+## Status
+
+This is **0.0.1 — pre-MVP scaffold**. The architecture, types, UI shell, and Tauri bridge are in place. Real engine execution, worktree management, and verification runs are next on the roadmap. See [`CHANGELOG.md`](./CHANGELOG.md) for what's actually shipped.
+
+## Stack
+
+| Layer | Choice | Why |
+|---|---|---|
+| Desktop shell | **Tauri 2** | Native window, small binary, Rust core |
+| Native runtime | **Rust** | Owns process spawning, git, filesystem, SQLite |
+| Frontend | **Next.js 15 + React 19 (static export)** | Familiar UI stack, no SSR runtime needed |
+| Styling | **Tailwind v4 + shadcn/ui** | Composable primitives, dark by default |
+| State | **Zustand + TanStack Query** | Local UI state vs. server state, cleanly split |
+| Bridge | **tauri-specta** | One source of truth: Rust types → typed TS client |
+| Storage | **SQLite + filesystem** | Structured metadata + large artifacts side-by-side |
+
+Read [`docs/architecture/architecture.md`](./docs/architecture/architecture.md) and the [ADRs](./docs/architecture/adr/) for the full picture.
+
+## Quick start
+
+### Prerequisites
+
+- **Node.js ≥ 20**
+- **pnpm ≥ 9** (`npm install -g pnpm`)
+- **Rust ≥ 1.78** ([install via `rustup`](https://rustup.rs/))
+- **Xcode Command Line Tools** (macOS) or **`build-essential`** (Linux)
+
+> Windows is intentionally out of scope for now — see [ADR 0003](./docs/architecture/adr/0003-support-macos-and-linux-only-initially.md).
+
+### Run it
+
+```bash
+git clone git@github.com:ronimoe/ai-software-studio.git
+cd ai-software-studio
+pnpm install
+
+pnpm dev          # browser-only, fast iteration with mock dispatcher
+pnpm tauri:dev    # full desktop window with the Rust backend
+```
+
+### Common scripts
+
+| Command | What it does |
+|---|---|
+| `pnpm dev` | Next.js dev server — UI only, mocked Tauri commands |
+| `pnpm tauri:dev` | Full desktop app with Rust backend |
+| `pnpm test` | Unit tests (Vitest) |
+| `pnpm typecheck` | TypeScript strict check |
+| `pnpm lint` | ESLint |
+| `pnpm build` | Static export to `out/` |
+| `pnpm tauri:build` | Desktop bundle (`.app` / `.AppImage` / `.deb`) |
+| `pnpm gen:bindings` | Regenerate `lib/bindings.ts` from Rust types |
+
+> `lib/bindings.ts` is generated from Rust via `tauri-specta` and `.gitignore`d. `predev`, `pretypecheck`, and `pretauri:dev` regenerate it automatically. If your IDE complains it doesn't exist, run `pnpm gen:bindings`.
 
 ## Documentation
 
-Full documentation is available in the `docs` folder:
+The [`docs/`](./docs/) folder is the canonical reference.
 
-- [Documentation Index](./docs/README.md)
-- [Product Brief](./docs/product-brief.md)
-- [Product Spec](./docs/product-spec.md)
-- [Architecture Details](./docs/architecture/README.md)
-- [Exploration Notes](./docs/exploration/README.md)
+- **[Product Brief](./docs/product-brief.md)** — vision, users, positioning
+- **[Product Spec](./docs/product-spec.md)** — flows, modules, MVP scope
+- **[Architecture](./docs/architecture/architecture.md)** — system design
+- **[ADRs](./docs/architecture/adr/)** — load-bearing decisions, with rationale
+- **[Diagrams](./docs/architecture/diagrams/)** — context, container, runtime, lifecycle
+- **[Exploration notes](./docs/exploration/)** — research spikes (PTY, engine adapters, packaging, GitHub, artifacts, MCP)
 
-## Core Principles
+## Contributing
 
-- **Local-first**: Core functionality runs locally without a hosted backend.
-- **No provider token storage**: Uses developer's existing tools (Claude Code/Codex CLI) which handle their own authentication.
-- **Human-approved**: AI agents execute, but humans own the final decision.
-- **Evidence-backed**: Verifies agent output independently through Git diffs, test runs, logs, and reports.
-- **Isolated by default**: Agent work happens in a dedicated Git worktree.
-- **Engine-agnostic**: Designed to support multiple local engines.
+Issues and pull requests are welcome. Before opening a large PR, please skim:
 
-## Running Locally
+1. [`docs/architecture/architecture.md`](./docs/architecture/architecture.md) — the two-process split is load-bearing
+2. The relevant [ADR](./docs/architecture/adr/) — many "obvious" changes have a written-down reason they weren't taken
 
-**Prerequisites:** Node.js ≥ 20, pnpm ≥ 9, Rust ≥ 1.78 (install via `rustup`), Xcode Command Line Tools (macOS) or `build-essential` (Linux).
+For new features, run `pnpm typecheck && pnpm lint && pnpm test` before pushing.
 
-```bash
-pnpm install
-pnpm gen:bindings   # generates lib/bindings.ts from Rust types
-pnpm dev            # browser-only iteration via mock dispatcher
-pnpm tauri:dev      # full desktop window with Rust backend
-```
+## License
 
-Other scripts:
+[MIT](./LICENSE) © ronimoe
 
-- `pnpm test` — unit tests (vitest)
-- `pnpm typecheck` — TypeScript strict check
-- `pnpm lint` — ESLint
-- `pnpm build` — static export to `out/`
-- `pnpm tauri:build` — desktop bundle (`.app` on macOS, `.AppImage`/`.deb` on Linux)
+---
 
-`lib/bindings.ts` is generated from Rust and `.gitignore`d. If your IDE complains it doesn't exist, run `pnpm gen:bindings`.
+<div align="center">
+<sub>Built on the bet that the missing piece of AI-assisted development isn't a smarter model — it's a workflow that lets you trust the output.</sub>
+</div>
