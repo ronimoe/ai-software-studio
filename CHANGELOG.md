@@ -22,7 +22,6 @@ Initial scaffold. Establishes the architectural foundation; no agent execution y
 - **State + data layer** — Zustand stores for ephemeral UI state, TanStack Query for server state, feature hooks under `features/*/use-*.ts`.
 - **shadcn/ui primitives** (`components/ui/`) on Tailwind v4 with a dark-default theme via `next-themes`.
 - **Vitest + jsdom** test setup with a smoke test for the Tauri bridge.
-- **Product, architecture, and exploration docs** in `docs/` (product brief, product spec, architecture doc, five ADRs, six Mermaid diagrams, exploration spikes).
 
 ### Known limitations
 

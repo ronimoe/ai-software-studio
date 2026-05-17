@@ -42,3 +42,6 @@ src-tauri/gen/
 CLAUDE.md
 .claude/
 
+# Project docs (kept local, not published)
+docs/
+

@@ -71,8 +71,6 @@ This is **0.0.1 — pre-MVP scaffold**. The architecture, types, UI shell, and T
 | Bridge | **tauri-specta** | One source of truth: Rust types → typed TS client |
 | Storage | **SQLite + filesystem** | Structured metadata + large artifacts side-by-side |
 
-Read [`docs/architecture/architecture.md`](./docs/architecture/architecture.md) and the [ADRs](./docs/architecture/adr/) for the full picture.
-
 ## Quick start
 
 ### Prerequisites
@@ -82,7 +80,7 @@ Read [`docs/architecture/architecture.md`](./docs/architecture/architecture.md) 
 - **Rust ≥ 1.78** ([install via `rustup`](https://rustup.rs/))
 - **Xcode Command Line Tools** (macOS) or **`build-essential`** (Linux)
 
-> Windows is intentionally out of scope for now — see [ADR 0003](./docs/architecture/adr/0003-support-macos-and-linux-only-initially.md).
+> Windows is intentionally out of scope for now.
 
 ### Run it
 
@@ -110,25 +108,9 @@ pnpm tauri:dev    # full desktop window with the Rust backend
 
 > `lib/bindings.ts` is generated from Rust via `tauri-specta` and `.gitignore`d. `predev`, `pretypecheck`, and `pretauri:dev` regenerate it automatically. If your IDE complains it doesn't exist, run `pnpm gen:bindings`.
 
-## Documentation
-
-The [`docs/`](./docs/) folder is the canonical reference.
-
-- **[Product Brief](./docs/product-brief.md)** — vision, users, positioning
-- **[Product Spec](./docs/product-spec.md)** — flows, modules, MVP scope
-- **[Architecture](./docs/architecture/architecture.md)** — system design
-- **[ADRs](./docs/architecture/adr/)** — load-bearing decisions, with rationale
-- **[Diagrams](./docs/architecture/diagrams/)** — context, container, runtime, lifecycle
-- **[Exploration notes](./docs/exploration/)** — research spikes (PTY, engine adapters, packaging, GitHub, artifacts, MCP)
-
 ## Contributing
 
-Issues and pull requests are welcome. Before opening a large PR, please skim:
-
-1. [`docs/architecture/architecture.md`](./docs/architecture/architecture.md) — the two-process split is load-bearing
-2. The relevant [ADR](./docs/architecture/adr/) — many "obvious" changes have a written-down reason they weren't taken
-
-For new features, run `pnpm typecheck && pnpm lint && pnpm test` before pushing.
+Issues and pull requests are welcome. Run `pnpm typecheck && pnpm lint && pnpm test` before pushing.
 
 ## License
 
