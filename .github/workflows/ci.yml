@@ -47,6 +47,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # tauri::generate_context!() validates that frontendDist (../out) exists at
+      # compile time. Create a placeholder so gen:bindings can compile before the
+      # real Next.js export runs.
+      - name: Stub frontend dist for binding generation
+        run: mkdir -p out && touch out/.placeholder
+
       - name: Generate bindings
         run: pnpm gen:bindings
 
@@ -58,3 +64,6 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+      - name: Build frontend
+        run: pnpm build
