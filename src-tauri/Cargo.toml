@@ -1,0 +1,27 @@
+[package]
+name = "ai-software-studio"
+version = "0.0.1"
+description = "AI Software Studio — local-first AI coding agent command center"
+edition = "2021"
+rust-version = "1.78"
+
+[lib]
+name = "ai_software_studio_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
+tokio = { version = "1", features = ["sync"] }
+specta = { version = "2.0.0-rc.20", features = ["derive"] }
+tauri-specta = { version = "2.0.0-rc.20", features = ["derive", "typescript"] }
+specta-typescript = "0.0.7"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
