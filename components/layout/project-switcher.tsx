@@ -23,8 +23,12 @@ export function ProjectSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="flex items-center gap-1.5 rounded-md border border-border/60 bg-muted/40 px-2.5 py-1 text-xs font-medium hover:bg-muted/60">
-        {isLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
-        <span className="font-mono">{active?.name ?? "no workspace"}</span>
+        {(isLoading || openProject.isPending) && (
+          <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+        )}
+        <span className="font-mono">
+          {openProject.isPending ? "opening…" : (active?.name ?? "no workspace")}
+        </span>
         <ChevronDown className="h-3 w-3 text-muted-foreground" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-56">
@@ -57,8 +61,12 @@ export function ProjectSwitcher() {
           disabled={openProject.isPending}
           className="text-xs"
         >
-          <FolderPlus className="mr-2 h-3 w-3" />
-          <span>Open project…</span>
+          {openProject.isPending ? (
+            <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+          ) : (
+            <FolderPlus className="mr-2 h-3 w-3" />
+          )}
+          <span>{openProject.isPending ? "Opening…" : "Open project…"}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
