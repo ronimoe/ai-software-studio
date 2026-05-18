@@ -1,4 +1,8 @@
-use crate::{error::AppError, models::Task, state::AppState};
+use crate::{
+    error::AppError,
+    models::{CreateTaskRequest, Task},
+    state::AppState,
+};
 use tauri::State;
 
 #[tauri::command]
@@ -17,4 +21,13 @@ pub async fn get_task(
     task_id: String,
 ) -> Result<Task, AppError> {
     state.tasks.get(&task_id).await
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn create_task(
+    state: State<'_, AppState>,
+    request: CreateTaskRequest,
+) -> Result<Task, AppError> {
+    state.tasks.create(&request).await
 }
