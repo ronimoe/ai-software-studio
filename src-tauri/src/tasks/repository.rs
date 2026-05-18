@@ -72,7 +72,7 @@ impl TaskRepository {
 
     pub async fn list_for_project(&self, project_id: &str) -> Result<Vec<Task>, AppError> {
         let ids: Vec<(String,)> = sqlx::query_as(
-            "SELECT id FROM tasks WHERE project_id = ? ORDER BY created_at DESC",
+            "SELECT id FROM tasks WHERE project_id = ? ORDER BY created_at DESC, rowid DESC",
         )
         .bind(project_id)
         .fetch_all(&self.db.pool)
