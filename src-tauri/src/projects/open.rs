@@ -11,36 +11,37 @@ pub async fn open_project(db: &Db, path: &str) -> Result<Project, AppError> {
     if !path_obj.is_dir() {
         return Err(AppError::invalid_arg(format!("path is not a directory: {path}")));
     }
-    validate_is_git_repo(path_obj)?;
+    let toplevel = resolve_git_toplevel(path_obj)?;
 
     let repo = ProjectRepository::new(db.clone());
 
-    // Idempotency: if a project already exists for this exact path, return it.
+    // Idempotency: if a project already exists for this canonical toplevel, return it.
     let existing = repo.list().await?;
-    if let Some(found) = existing.into_iter().find(|p| p.path == path) {
+    if let Some(found) = existing.into_iter().find(|p| p.path == toplevel) {
         return Ok(found);
     }
 
-    let name = path_obj
+    let toplevel_path = Path::new(&toplevel);
+    let name = toplevel_path
         .file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("repo")
         .to_string();
-    let default_branch = detect_default_branch(path_obj);
+    let default_branch = detect_default_branch(toplevel_path);
 
     let project = Project {
         id: format!("proj-{}", Uuid::new_v4()),
         name,
-        path: path.to_string(),
+        path: toplevel,
         default_branch,
     };
     repo.insert(&project).await?;
     Ok(project)
 }
 
-fn validate_is_git_repo(path: &Path) -> Result<(), AppError> {
+fn resolve_git_toplevel(path: &Path) -> Result<String, AppError> {
     let output = Command::new("git")
-        .args(["rev-parse", "--is-inside-work-tree"])
+        .args(["rev-parse", "--show-toplevel"])
         .current_dir(path)
         .output()
         .map_err(|e| AppError::internal(format!("run git: {e}")))?;
@@ -50,14 +51,14 @@ fn validate_is_git_repo(path: &Path) -> Result<(), AppError> {
             path.display()
         )));
     }
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    if stdout.trim() != "true" {
+    let toplevel = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if toplevel.is_empty() {
         return Err(AppError::invalid_arg(format!(
-            "{} is not the top of a git working tree",
+            "{} did not resolve to a git working tree",
             path.display()
         )));
     }
-    Ok(())
+    Ok(toplevel)
 }
 
 fn detect_default_branch(path: &Path) -> String {
