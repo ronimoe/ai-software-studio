@@ -5,7 +5,7 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     include: ["**/*.test.ts", "**/*.test.tsx"],
-    exclude: ["node_modules", ".next", "out", "src-tauri"],
+    exclude: ["node_modules", ".next", "out", "src-tauri", ".worktrees"],
   },
   resolve: {
     alias: {
