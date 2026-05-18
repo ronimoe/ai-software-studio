@@ -35,6 +35,32 @@ const mockImpl: Commands = {
     }
     return { status: "ok", data: task };
   },
+  createTask: async (request) => {
+    await sleep(80);
+    return {
+      status: "ok" as const,
+      data: {
+        id: `task-${Date.now()}`,
+        projectId: request.projectId,
+        title: request.title,
+        description: request.description,
+        outOfScope: request.outOfScope,
+        filesToTouchHint: request.filesToTouchHint,
+        acceptanceCriteria: request.acceptanceCriteria.map((label, i) => ({
+          id: `ac-${i}`,
+          label,
+          satisfied: false,
+        })),
+        constraints: request.constraints,
+        selectedEngine: request.selectedEngine,
+        status: "draft" as const,
+        risk: "unknown" as const,
+        branchName: null,
+        worktreePath: null,
+        createdAt: new Date().toISOString(),
+      },
+    };
+  },
   openProject: async (path: string) => {
     await sleep(80);
     return {
