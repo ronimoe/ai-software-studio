@@ -2,8 +2,6 @@ use crate::error::AppError;
 use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
 use std::path::PathBuf;
 
-const SCHEMA: &str = include_str!("schema.sql");
-
 #[derive(Clone)]
 pub struct Db {
     pub pool: SqlitePool,
@@ -23,7 +21,10 @@ impl Db {
             .connect(&url)
             .await
             .map_err(|e| AppError::internal(format!("open db: {e}")))?;
-        apply_schema(&pool).await?;
+        sqlx::migrate!("./migrations")
+            .run(&pool)
+            .await
+            .map_err(|e| AppError::internal(format!("run migrations: {e}")))?;
         Ok(Self { pool })
     }
 
@@ -35,17 +36,12 @@ impl Db {
             .connect("sqlite::memory:")
             .await
             .map_err(|e| AppError::internal(format!("open test db: {e}")))?;
-        apply_schema(&pool).await?;
+        sqlx::migrate!("./migrations")
+            .run(&pool)
+            .await
+            .map_err(|e| AppError::internal(format!("run migrations: {e}")))?;
         Ok(Self { pool })
     }
-}
-
-async fn apply_schema(pool: &SqlitePool) -> Result<(), AppError> {
-    sqlx::query(SCHEMA)
-        .execute(pool)
-        .await
-        .map_err(|e| AppError::internal(format!("apply schema: {e}")))?;
-    Ok(())
 }
 
 fn production_db_path() -> Result<PathBuf, AppError> {
