@@ -47,13 +47,9 @@ pub fn run() {
         .invoke_handler(specta_builder.invoke_handler())
         .setup(move |app| {
             specta_builder.mount_events(app);
-            let handle = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                match AppState::init().await {
-                    Ok(state) => { handle.manage(state); }
-                    Err(e) => { eprintln!("FATAL: AppState::init failed: {e}"); std::process::exit(1); }
-                }
-            });
+            let state = tauri::async_runtime::block_on(AppState::init())
+                .map_err(|e| format!("AppState::init failed: {e}"))?;
+            app.manage(state);
             Ok(())
         })
         .run(tauri::generate_context!())
