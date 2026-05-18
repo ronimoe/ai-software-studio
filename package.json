@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "predev": "pnpm gen:bindings",
-    "dev": "next dev",
+    "dev": "next dev --port 1420",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
