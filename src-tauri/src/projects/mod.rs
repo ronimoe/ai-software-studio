@@ -3,6 +3,8 @@ pub mod repository;
 
 #[cfg(test)]
 mod repository_tests;
+#[cfg(test)]
+mod open_tests;
 
 use crate::{db::Db, error::AppError, models::Project};
 use repository::ProjectRepository;
