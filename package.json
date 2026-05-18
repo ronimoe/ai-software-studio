@@ -15,7 +15,7 @@
     "pretauri:dev": "pnpm gen:bindings",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
-    "gen:bindings": "cargo test --manifest-path src-tauri/Cargo.toml export_bindings -- --nocapture",
+    "gen:bindings": "cargo test --manifest-path src-tauri/Cargo.toml --lib export_bindings -- --nocapture",
     "test": "vitest run",
     "test:watch": "vitest"
   },

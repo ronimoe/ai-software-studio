@@ -18,6 +18,7 @@ pub mod verification;
 use state::AppState;
 use tauri_specta::{collect_commands, Builder};
 
+#[cfg(not(test))]
 pub fn run() {
     let specta_builder = Builder::<tauri::Wry>::new()
         .commands(collect_commands![
