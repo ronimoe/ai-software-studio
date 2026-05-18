@@ -7,6 +7,7 @@ import { useUiStore } from "@/stores/ui-store";
 import { useTask } from "@/features/tasks/use-tasks";
 import { AcceptanceList } from "./acceptance-list";
 import { ActivityLog } from "./activity-log";
+import { StartButton } from "./start-button";
 
 export function AgentWorkspacePanel() {
   const activeTaskId = useUiStore((s) => s.activeTaskId);
@@ -26,10 +27,14 @@ export function AgentWorkspacePanel() {
       subtitle="Watch first. Evidence-first. Human accountable."
       badge={task.status}
       actions={
-        <div className="flex items-center gap-1">
-          <Button size="sm" variant="ghost">Request Changes</Button>
-          <Button size="sm">Approve</Button>
-        </div>
+        task.status === "draft" ? (
+          <StartButton taskId={task.id} />
+        ) : (
+          <div className="flex items-center gap-1">
+            <Button size="sm" variant="ghost">Request Changes</Button>
+            <Button size="sm">Approve</Button>
+          </div>
+        )
       }
     >
       <div className="space-y-4">
@@ -40,6 +45,11 @@ export function AgentWorkspacePanel() {
           </div>
           <h3 className="mt-1 text-base font-semibold">{task.title}</h3>
           <p className="mt-1 text-sm text-muted-foreground">{task.description}</p>
+          {task.worktreePath && (
+            <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+              worktree: {task.worktreePath}
+            </p>
+          )}
         </div>
 
         <div>
