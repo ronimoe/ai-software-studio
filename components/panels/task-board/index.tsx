@@ -11,7 +11,7 @@ export function TaskBoardPanel() {
   const activeProjectId = useUiStore((s) => s.activeProjectId);
   const activeTaskId = useUiStore((s) => s.activeTaskId);
   const setActiveTask = useUiStore((s) => s.setActiveTask);
-  const { data: tasks = [], isLoading } = useTasks(activeProjectId);
+  const { data: tasks = [], isLoading } = useTasks(activeProjectId ?? "");
 
   return (
     <PanelFrame
