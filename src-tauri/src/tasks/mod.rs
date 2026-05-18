@@ -1,3 +1,11 @@
+pub mod repository;
+pub mod brief;
+
+#[cfg(test)]
+mod repository_tests;
+#[cfg(test)]
+mod brief_tests;
+
 use crate::{error::AppError, fixtures, models::Task};
 
 pub struct TaskService;
