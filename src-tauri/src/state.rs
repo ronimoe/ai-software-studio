@@ -19,7 +19,7 @@ impl AppState {
     pub async fn init() -> Result<Self, AppError> {
         let db = Db::init().await?;
         Ok(Self {
-            tasks: TaskService::new(),
+            tasks: TaskService::new(db.clone()),
             projects: ProjectService::new(db.clone()),
             engines: EngineService::new(),
             verification: VerificationService::new(),
