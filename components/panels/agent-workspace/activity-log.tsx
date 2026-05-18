@@ -9,8 +9,10 @@ const kindColor = {
   system: "text-primary",
 };
 
+const EMPTY_LINES: never[] = [];
+
 export function ActivityLog({ taskId }: { taskId: string }) {
-  const lines = useTaskStore((s) => s.streamingLog[taskId] ?? []);
+  const lines = useTaskStore((s) => s.streamingLog[taskId] ?? EMPTY_LINES);
   if (lines.length === 0) {
     return <p className="text-xs text-muted-foreground">No activity yet.</p>;
   }

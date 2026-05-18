@@ -28,6 +28,8 @@ export const mockTasks: Task[] = [
     title: "Add magic link login while preserving JWT flow",
     description:
       "Migrate sign-in to email magic links without breaking the existing JWT-based session handler.",
+    outOfScope: "",
+    filesToTouchHint: "",
     acceptanceCriteria: [
       { id: "ac1", label: "Magic link email delivered in dev", satisfied: true },
       { id: "ac2", label: "Existing JWT routes still pass", satisfied: true },
@@ -46,6 +48,8 @@ export const mockTasks: Task[] = [
     projectId: "proj-default",
     title: "Fix race in checkout cancellation",
     description: "Investigate intermittent failure when a user cancels checkout mid-payment.",
+    outOfScope: "",
+    filesToTouchHint: "",
     acceptanceCriteria: [
       { id: "ac1", label: "Reproducer test added", satisfied: false },
       { id: "ac2", label: "No regressions in /checkout", satisfied: false },
@@ -63,6 +67,8 @@ export const mockTasks: Task[] = [
     projectId: "proj-default",
     title: "Reduce dashboard query latency",
     description: "P95 is 1.2s; target 400ms.",
+    outOfScope: "",
+    filesToTouchHint: "",
     acceptanceCriteria: [
       { id: "ac1", label: "P95 under 400ms in load test", satisfied: false },
     ],
@@ -79,6 +85,8 @@ export const mockTasks: Task[] = [
     projectId: "proj-default",
     title: "Improve onboarding empty state",
     description: "Show users a guided path on first login.",
+    outOfScope: "",
+    filesToTouchHint: "",
     acceptanceCriteria: [],
     constraints: [],
     selectedEngine: "claude-code",
@@ -93,6 +101,8 @@ export const mockTasks: Task[] = [
     projectId: "proj-default",
     title: "Refactor billing webhook handler",
     description: "Split the 600-line handler into intent-scoped sub-handlers.",
+    outOfScope: "",
+    filesToTouchHint: "",
     acceptanceCriteria: [],
     constraints: ["Do not change webhook public contract"],
     selectedEngine: null,

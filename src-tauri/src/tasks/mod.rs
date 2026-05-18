@@ -1,18 +1,42 @@
-use crate::{error::AppError, fixtures, models::Task};
+pub mod brief;
+pub mod repository;
 
-pub struct TaskService;
+#[cfg(test)]
+mod brief_tests;
+#[cfg(test)]
+mod repository_tests;
+
+use crate::{
+    db::Db,
+    error::AppError,
+    models::{CreateTaskRequest, Task, TaskStatus},
+};
+use repository::TaskRepository;
+
+pub struct TaskService {
+    repo: TaskRepository,
+}
 
 impl TaskService {
-    pub fn new() -> Self { Self }
+    pub fn new(db: Db) -> Self {
+        Self { repo: TaskRepository::new(db) }
+    }
 
     pub async fn list_for_project(&self, project_id: &str) -> Result<Vec<Task>, AppError> {
-        Ok(fixtures::tasks_for_project(project_id))
+        self.repo.list_for_project(project_id).await
     }
 
     pub async fn get(&self, task_id: &str) -> Result<Task, AppError> {
-        fixtures::tasks_for_project("proj-default")
-            .into_iter()
-            .find(|t| t.id == task_id)
-            .ok_or_else(|| AppError::not_found(format!("task {task_id} not found")))
+        self.repo.get(task_id).await
+    }
+
+    pub async fn create(&self, req: &CreateTaskRequest) -> Result<Task, AppError> {
+        let task = self.repo.insert(req).await?;
+        brief::write_brief(&task)?;
+        Ok(task)
+    }
+
+    pub async fn update_status(&self, task_id: &str, status: TaskStatus) -> Result<(), AppError> {
+        self.repo.update_status(task_id, status).await
     }
 }

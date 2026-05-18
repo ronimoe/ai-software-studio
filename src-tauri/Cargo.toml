@@ -1,6 +1,6 @@
 [package]
 name = "ai-software-studio"
-version = "0.0.2"
+version = "0.0.3"
 description = "AI Software Studio — local-first AI coding agent command center"
 edition = "2021"
 rust-version = "1.86"
@@ -22,7 +22,7 @@ tokio = { version = "1", features = ["sync", "rt-multi-thread", "macros", "proce
 specta = { version = "2.0.0-rc.20", features = ["derive", "serde_json"] }
 tauri-specta = { version = "2.0.0-rc.20", features = ["derive", "typescript"] }
 specta-typescript = "0.0.7"
-sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "chrono", "macros"] }
+sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "chrono", "macros", "migrate"] }
 chrono = { version = "0.4", features = ["serde"] }
 dirs = "5"
 uuid = { version = "1", features = ["v4"] }
