@@ -39,6 +39,8 @@ pub struct Task {
     pub project_id: String,
     pub title: String,
     pub description: String,
+    pub out_of_scope: String,
+    pub files_to_touch_hint: String,
     pub acceptance_criteria: Vec<AcceptanceCriterion>,
     pub constraints: Vec<String>,
     pub selected_engine: Option<String>,
@@ -91,4 +93,17 @@ pub struct VerificationRun {
     pub task_id: String,
     pub started_at: String,
     pub checks: Vec<VerificationCheck>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateTaskRequest {
+    pub project_id: String,
+    pub title: String,
+    pub description: String,
+    pub out_of_scope: String,
+    pub files_to_touch_hint: String,
+    pub acceptance_criteria: Vec<String>, // raw labels; ids assigned server-side
+    pub constraints: Vec<String>,
+    pub selected_engine: Option<String>,
 }
