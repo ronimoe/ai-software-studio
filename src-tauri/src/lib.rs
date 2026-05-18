@@ -15,7 +15,10 @@ pub mod state;
 pub mod tasks;
 pub mod verification;
 
+#[cfg(not(test))]
 use state::AppState;
+#[cfg(not(test))]
+use tauri::Manager;
 use tauri_specta::{collect_commands, Builder};
 
 #[cfg(not(test))]
@@ -23,6 +26,7 @@ pub fn run() {
     let specta_builder = Builder::<tauri::Wry>::new()
         .commands(collect_commands![
             commands::projects::list_projects,
+            commands::projects::open_project,
             commands::tasks::list_tasks,
             commands::tasks::get_task,
             commands::engines::list_engines,
@@ -39,10 +43,13 @@ pub fn run() {
         .expect("Failed to export typescript bindings");
 
     tauri::Builder::default()
-        .manage(AppState::new())
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(specta_builder.invoke_handler())
         .setup(move |app| {
             specta_builder.mount_events(app);
+            let state = tauri::async_runtime::block_on(AppState::init())
+                .map_err(|e| format!("AppState::init failed: {e}"))?;
+            app.manage(state);
             Ok(())
         })
         .run(tauri::generate_context!())
@@ -58,6 +65,7 @@ mod export_bindings_test {
         let builder = Builder::<tauri::Wry>::new()
             .commands(collect_commands![
                 commands::projects::list_projects,
+                commands::projects::open_project,
                 commands::tasks::list_tasks,
                 commands::tasks::get_task,
                 commands::engines::list_engines,

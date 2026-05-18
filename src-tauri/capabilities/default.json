@@ -3,5 +3,8 @@
   "identifier": "default",
   "description": "Default capabilities for AI Software Studio",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": [
+    "core:default",
+    "dialog:default"
+  ]
 }

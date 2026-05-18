@@ -1,6 +1,6 @@
 {
   "name": "ai-software-studio",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "type": "module",
   "scripts": {
@@ -22,6 +22,7 @@
   "dependencies": {
     "@tanstack/react-query": "^5.100.10",
     "@tauri-apps/api": "2",
+    "@tauri-apps/plugin-dialog": "^2.7.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.16.0",

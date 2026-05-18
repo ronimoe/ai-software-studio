@@ -35,6 +35,18 @@ const mockImpl: Commands = {
     }
     return { status: "ok", data: task };
   },
+  openProject: async (path: string) => {
+    await sleep(80);
+    return {
+      status: "ok" as const,
+      data: {
+        id: `proj-${Date.now()}`,
+        name: path.split("/").pop() ?? "repo",
+        path,
+        defaultBranch: "main",
+      },
+    };
+  },
   listEngines: async () => {
     await sleep(50);
     return { status: "ok", data: mockEngines };
