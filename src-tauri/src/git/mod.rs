@@ -1,4 +1,4 @@
 //! git module — placeholder. Exists so commands and services can
 //! depend on it as features land.
 
-// TODO: implement in Phase git work.
+pub mod worktree_paths;
