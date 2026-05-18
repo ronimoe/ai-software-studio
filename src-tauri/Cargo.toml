@@ -20,7 +20,7 @@ thiserror = "1"
 tokio = { version = "1", features = ["sync"] }
 specta = { version = "2.0.0-rc.20", features = ["derive", "serde_json"] }
 tauri-specta = { version = "2.0.0-rc.20", features = ["derive", "typescript"] }
-specta-typescript = "0.0.7"
+specta-typescript = "0.0.12"
 
 [features]
 default = ["custom-protocol"]
