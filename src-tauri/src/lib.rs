@@ -33,6 +33,8 @@ pub fn run() {
             commands::engines::list_engines,
             commands::engines::detect_engines,
             commands::verification::list_verification,
+            commands::worktrees::create_worktree,
+            commands::worktrees::remove_worktree,
         ]);
 
     #[cfg(debug_assertions)]
@@ -73,6 +75,8 @@ mod export_bindings_test {
                 commands::engines::list_engines,
                 commands::engines::detect_engines,
                 commands::verification::list_verification,
+                commands::worktrees::create_worktree,
+                commands::worktrees::remove_worktree,
             ]);
         builder
             .export(specta_typescript::Typescript::default(), "../lib/bindings.ts")

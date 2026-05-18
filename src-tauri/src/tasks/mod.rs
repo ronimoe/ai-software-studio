@@ -39,4 +39,17 @@ impl TaskService {
     pub async fn update_status(&self, task_id: &str, status: TaskStatus) -> Result<(), AppError> {
         self.repo.update_status(task_id, status).await
     }
+
+    pub async fn set_branch_and_worktree(
+        &self,
+        task_id: &str,
+        branch: &str,
+        worktree: &str,
+    ) -> Result<(), AppError> {
+        self.repo.set_branch_and_worktree(task_id, branch, worktree).await
+    }
+
+    pub async fn clear_worktree(&self, task_id: &str) -> Result<(), AppError> {
+        self.repo.clear_worktree(task_id).await
+    }
 }

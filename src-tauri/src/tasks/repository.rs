@@ -144,6 +144,31 @@ impl TaskRepository {
             .map_err(|e| AppError::internal(format!("update status: {e}")))?;
         Ok(())
     }
+
+    pub async fn set_branch_and_worktree(
+        &self,
+        task_id: &str,
+        branch: &str,
+        worktree: &str,
+    ) -> Result<(), AppError> {
+        sqlx::query("UPDATE tasks SET branch_name = ?, worktree_path = ? WHERE id = ?")
+            .bind(branch)
+            .bind(worktree)
+            .bind(task_id)
+            .execute(&self.db.pool)
+            .await
+            .map_err(|e| AppError::internal(format!("set branch+worktree: {e}")))?;
+        Ok(())
+    }
+
+    pub async fn clear_worktree(&self, task_id: &str) -> Result<(), AppError> {
+        sqlx::query("UPDATE tasks SET branch_name = NULL, worktree_path = NULL WHERE id = ?")
+            .bind(task_id)
+            .execute(&self.db.pool)
+            .await
+            .map_err(|e| AppError::internal(format!("clear worktree: {e}")))?;
+        Ok(())
+    }
 }
 
 fn serialize_status(s: TaskStatus) -> &'static str {
