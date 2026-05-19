@@ -7,7 +7,7 @@ Delegate tasks to Claude Code and Codex CLI. Watch them work in isolated git wor
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Status: pre-MVP](https://img.shields.io/badge/status-pre--MVP-orange.svg)](./CHANGELOG.md)
-[![Version](https://img.shields.io/badge/version-0.0.1-lightgrey.svg)](./VERSION)
+[![Version](https://img.shields.io/badge/version-0.0.4-lightgrey.svg)](./VERSION)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-success.svg)](#prerequisites)
 [![Stack](https://img.shields.io/badge/stack-Tauri%20%C2%B7%20Rust%20%C2%B7%20Next.js-black.svg)](#stack)
 
@@ -57,7 +57,7 @@ The agent does the work. The app captures the proof. **You decide what ships.**
 
 ## Status
 
-This is **0.0.1 — pre-MVP scaffold**. The architecture, types, UI shell, and Tauri bridge are in place. Real engine execution, worktree management, and verification runs are next on the roadmap. See [`CHANGELOG.md`](./CHANGELOG.md) for what's actually shipped.
+This is **0.0.4 — pre-MVP, Plans 1–3 of v0.1 shipped**. You can open a git repo, create a structured task through a 6-step intake wizard, and spin up an isolated git worktree with a managed `CLAUDE.md` brief that the agent will read. Real engine execution (Plan 4), changed-files/diff (Plan 5), verification runs (Plan 6), and PR evidence reports (Plan 7) are next. See [`CHANGELOG.md`](./CHANGELOG.md) for what's actually shipped and [`docs/manual.md`](./docs/manual.md) for how to use what's here today.
 
 ## Stack
 
@@ -77,7 +77,7 @@ This is **0.0.1 — pre-MVP scaffold**. The architecture, types, UI shell, and T
 
 - **Node.js ≥ 20**
 - **pnpm ≥ 9** (`npm install -g pnpm`)
-- **Rust ≥ 1.78** ([install via `rustup`](https://rustup.rs/))
+- **Rust ≥ 1.88** ([install via `rustup`](https://rustup.rs/)) — `rust-toolchain.toml` pins this, so rustup auto-installs on first `cargo` invocation if your default is older
 - **Xcode Command Line Tools** (macOS) or **`build-essential`** (Linux)
 
 > Windows is intentionally out of scope for now.

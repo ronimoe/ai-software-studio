@@ -85,6 +85,29 @@ const mockImpl: Commands = {
     await sleep(50);
     return { status: "ok", data: mockVerification.filter((v) => v.taskId === taskId) };
   },
+  createWorktree: async (taskId: string) => {
+    await sleep(120);
+    const task = mockTasks.find((t) => t.id === taskId);
+    if (!task) {
+      return {
+        status: "error" as const,
+        error: { code: "notFound" as const, message: `task ${taskId} not found`, details: null },
+      };
+    }
+    return {
+      status: "ok" as const,
+      data: {
+        ...task,
+        status: "worktreeCreated" as const,
+        branchName: `aistudio/task-${taskId.replace("task-", "").slice(0, 8)}`,
+        worktreePath: `/mock/worktree/${taskId}`,
+      },
+    };
+  },
+  removeWorktree: async (_taskId: string) => {
+    await sleep(80);
+    return { status: "ok" as const, data: null };
+  },
 };
 
 function pickImpl(): Commands {

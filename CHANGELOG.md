@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.4] — 2026-05-19
+
+The "Create worktree" button is live. Clicking it on a draft task spawns a real git worktree under `~/Library/Application Support/AI Software Studio/worktrees/{project}/{task}` off the project's default branch, drops a managed `CLAUDE.md` and `.aistudio/task-brief.md` into it, and transitions the task to `WorktreeCreated`. If anything goes wrong mid-creation, the worktree, its branch ref, and any installed files are rolled back so the user's repo is left exactly as it was. This is the project's first compensating-action operation — the template Plans 4–7 will follow.
+
+### Added
+
+- **`GitService`** (`src-tauri/src/git/mod.rs`) — wraps the `git` CLI via `std::process::Command` (no `git2` dependency for the v0.1 surface). `worktree_add(repo, branch, dest, base_ref)` creates a fresh branch from the specified ref and adds a worktree at the dest. `worktree_remove(repo, dest)` uses `git worktree remove --force` plus a `fs::remove_dir_all` fallback so double-cleanup is safe. `branch_delete(repo, branch)` swallows "not found" so it's idempotent like remove. 4 git-service tests, including an explicit idempotency assertion that the rollback path depends on.
+- **`worktree_paths` helpers** (`src-tauri/src/git/worktree_paths.rs`) — `worktree_root()` returns `~/Library/Application Support/AI Software Studio/worktrees/`. `worktree_path(project_id, task_id)` is the canonical layout. `branch_name(task_id)` produces `aistudio/task-{first-8-chars}` so branch names stay readable. `is_within_worktree_root(path)` canonicalizes both sides when the path exists (defeating symlinks and `..` tricks) and falls back to a string-prefix check otherwise — used to guard `remove_worktree` against a corrupted SQLite row pointing outside the managed root. 9 path tests.
+- **`WorktreeContextService`** (`src-tauri/src/core/worktree_context.rs`) — `install(worktree, task, brief)` writes `.aistudio/task-brief.md`, writes/updates `CLAUDE.md` with a managed section bracketed by `<!-- aistudio:begin -->` / `<!-- aistudio:end -->` markers, an `@.aistudio/task-brief.md` import, and 4 task rules, and ensures `.aistudio/` is in the worktree's `.gitignore`. All operations are idempotent: existing CLAUDE.md content is preserved, a second install replaces the managed section instead of duplicating, and the gitignore line is added only once. 7 context tests including a deliberate failure-mode assertion the orchestrator's rollback contract relies on.
+- **`core::worktree_lifecycle::create_worktree_lifecycle`** (`src-tauri/src/core/worktree_lifecycle.rs`) — the orchestrator. Takes `base_ref` and threads it to `worktree_add`. Performs LIFO compensating-action cleanup on partial failure across all four steps: any post-add failure calls `rollback_worktree(repo, dest, branch)` which `worktree_remove`s the worktree, then `branch_delete`s the branch ref, and (for step-4) reverts task status to Draft. Step-1 failure also rolls back because `git worktree add -b` creates the branch ref before validating the destination. Pure of `State<'_, AppState>` so it can be unit-tested with real services against a temp repo + in-memory DB. 1 lifecycle test verifies no DB residue on step-1 failure.
+- **`create_worktree` + `remove_worktree` Tauri commands** (`src-tauri/src/commands/worktrees.rs`) — thin wrappers around the lifecycle. `create_worktree` rejects non-Draft tasks and existing dest paths, then delegates. `remove_worktree` validates the worktree path is under the managed root via `is_within_worktree_root` before any destructive operation, then `worktree_remove`s + `branch_delete`s + clears the task fields + reverts status to Draft.
+- **`TaskService::set_branch_and_worktree` and `clear_worktree`** (`src-tauri/src/tasks/{mod.rs,repository.rs}`) — sqlx UPDATE wrappers used by the lifecycle to persist or clear the worktree fields on the task row.
+- **`AppState` holds `GitService` and `WorktreeContextService`** (`src-tauri/src/state.rs`) — both stateless unit structs in v0.1, held on `AppState` for API symmetry as future statefulness lands.
+- **`useCreateWorktree` mutation hook** (`features/worktrees/use-create-worktree.ts`) — unwraps `Result<Task, AppError>` and invalidates `["tasks", projectId]` + `["task", taskId]` query keys on success so the panel refreshes automatically.
+- **`StartButton` component** (`components/panels/agent-workspace/start-button.tsx`) — the "Create worktree" button with a `Loader2` spinner during the mutation and a `GitBranch` icon at rest. Rendered only on tasks with status `Draft`; the existing Approve/Request Changes pair takes over once the worktree exists.
+- **Worktree path display** in Agent Workspace — when a task has a `worktreePath`, it renders under the description in monospace so the developer can see where the agent will work.
+- **`createWorktree` + `removeWorktree` mocks** (`lib/tauri.ts`) — so `pnpm dev` continues to exercise the UI without compiling Rust. The mock branch name uses the same `aistudio/task-{first-8-chars}` formula as the real backend.
+- **Failure-semantics architectural rule** (`docs/superpowers/plans/2026-05-18-v0.1-plan-3-worktree-and-context.md` §Architecture) — codifies when to use compensating-action cleanup (stateful externally-tracked side effects like git worktrees, OS processes, GitHub PRs) vs. accept partial state (regenerable side effects derived from DB state, like Plan 2's task-brief file). This is the template Plans 4–7 should follow for new stateful operations.
+
+### Changed
+
+- **`commands/worktrees::create_worktree` is a thin wrapper** around `core::worktree_lifecycle::create_worktree_lifecycle`. The heavy lifting lives in an orchestrator decoupled from `State<'_, AppState>` so it can be unit-tested against a real temp repo + in-memory DB.
+- **`worktree_add` takes an optional base ref**. Previously it ran `git worktree add -b <branch> <dest>` which uses current HEAD — if the developer happened to have a feature branch checked out in their project repo when they clicked "Create worktree", the agent's worktree branched off that, not off `main`. Now the lifecycle threads `&project.default_branch` through so worktrees always start from the configured default.
+
+### Fixed
+
+- **Rollback now deletes the branch ref**. The earlier compensating-action draft only removed the worktree directory; `git worktree add -b` creates a real branch ref in the parent repo that survives `worktree_remove`. After any post-add failure (and any step-1 failure, because git creates the ref before validating the destination), the next retry would fail with "fatal: a branch named ... already exists" and the user was wedged. `branch_delete` is now part of the LIFO cleanup.
+- **`remove_worktree` can no longer be used as arbitrary directory deletion**. The command guards with `is_within_worktree_root(&dest)` before calling `worktree_remove`; a corrupted or imported SQLite row with `worktree_path = "/Users/me"` is rejected with `invalid_arg` instead of being passed to `fs::remove_dir_all`.
+- **Version drift** — `VERSION` file was at `0.0.2` while `package.json` + `Cargo.toml` + `tauri.conf.json` were at `0.0.3` (Plan 2's bump missed `VERSION`). All four files now sit at `0.0.4`.
+
 ## [0.0.3] — 2026-05-18
 
 Tasks now exist as real, persisted things. A 6-step intake wizard lives behind the **+** button on the Task Board: title → description → acceptance criteria → constraints → out-of-scope → files-to-touch → review. Creating a task writes a row to SQLite, renders a `task-brief.md` artifact to disk, and selects the new task in the workspace.
@@ -86,7 +116,8 @@ Initial scaffold. Establishes the architectural foundation; no agent execution y
 - No git worktree management, process runner, or verification execution wired through to the UI.
 - macOS + Linux only; Windows is intentionally out of scope for the initial milestone.
 
-[Unreleased]: https://github.com/ronimoe/ai-software-studio/compare/v0.0.3...HEAD
+[Unreleased]: https://github.com/ronimoe/ai-software-studio/compare/v0.0.4...HEAD
+[0.0.4]: https://github.com/ronimoe/ai-software-studio/releases/tag/v0.0.4
 [0.0.3]: https://github.com/ronimoe/ai-software-studio/releases/tag/v0.0.3
 [0.0.2]: https://github.com/ronimoe/ai-software-studio/releases/tag/v0.0.2
 [0.0.1]: https://github.com/ronimoe/ai-software-studio/releases/tag/v0.0.1
