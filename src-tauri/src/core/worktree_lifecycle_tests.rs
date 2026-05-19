@@ -65,6 +65,7 @@ async fn lifecycle_does_not_leak_state_when_worktree_add_fails() {
     let result = create_worktree_lifecycle(
         &git, &wt_ctx, &tasks, &task,
         repo_dir.path(), &branch, &dest,
+        &project.default_branch,
     ).await;
 
     assert!(result.is_err(), "lifecycle must fail when worktree_add cannot proceed");
@@ -75,4 +76,17 @@ async fn lifecycle_does_not_leak_state_when_worktree_add_fails() {
     assert_eq!(reloaded.status, TaskStatus::Draft, "task status unchanged");
     assert!(reloaded.branch_name.is_none(), "no branch recorded");
     assert!(reloaded.worktree_path.is_none(), "no worktree path recorded");
+
+    // Step-1 failure means `git worktree add` itself failed before ever creating
+    // the branch ref, so there should be nothing to clean up — but verify the
+    // user's repo is clean regardless, so the user can immediately retry.
+    let branches = Command::new("git")
+        .args(["branch", "--list", &branch])
+        .current_dir(repo_dir.path())
+        .output()
+        .expect("list branches");
+    assert!(
+        String::from_utf8_lossy(&branches.stdout).trim().is_empty(),
+        "no dangling branch ref must be left in the user's repo after step-1 failure"
+    );
 }
