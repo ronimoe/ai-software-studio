@@ -26,6 +26,7 @@ sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "chrono", "macr
 chrono = { version = "0.4", features = ["serde"] }
 dirs = "5"
 dashmap = "6"
+libc = "0.2"
 uuid = { version = "1", features = ["v4"] }
 
 [features]
