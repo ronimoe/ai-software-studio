@@ -1,8 +1,11 @@
 pub mod adapters;
 pub mod detection;
+pub mod github;
 
 #[cfg(test)]
 mod detection_tests;
+#[cfg(test)]
+mod github_tests;
 
 use crate::{error::AppError, models::EngineStatus};
 
