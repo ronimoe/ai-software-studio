@@ -127,3 +127,25 @@ pub struct ChangedFile {
     pub additions: u32,
     pub deletions: u32,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct VerificationSettings {
+    pub install: Option<String>,
+    pub typecheck: Option<String>,
+    pub lint: Option<String>,
+    pub test: Option<String>,
+    pub build: Option<String>,
+}
+
+impl Default for VerificationSettings {
+    fn default() -> Self {
+        Self {
+            install: Some("pnpm install".to_string()),
+            typecheck: Some("pnpm typecheck".to_string()),
+            lint: Some("pnpm lint".to_string()),
+            test: Some("pnpm test".to_string()),
+            build: Some("pnpm build".to_string()),
+        }
+    }
+}
