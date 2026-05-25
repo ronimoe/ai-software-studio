@@ -149,3 +149,31 @@ impl Default for VerificationSettings {
         }
     }
 }
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Type, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum GitHubAuthStatus { Authed, NotAuthed, NotInstalled }
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct GitHubStatus {
+    pub auth: GitHubAuthStatus,
+    pub binary_path: Option<String>,
+    pub account: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct CreatePrRequest {
+    pub task_id: String,
+    pub base_branch: Option<String>,
+    pub draft: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct PrResult {
+    pub url: String,
+    pub branch: String,
+    pub base: String,
+}
