@@ -17,3 +17,14 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      # sqlx 0.9.0 raises MSRV to Rust 1.94; we're pinned to 1.88.
+      # Closed PR #15. Revisit when we deliberately bump MSRV.
+      - dependency-name: "sqlx"
+        versions: [">=0.9"]
+      # specta-typescript 0.0.12 pulls a newer specta that uses the unstable
+      # `debug_closure_helpers` Rust feature (stabilized in 1.90). Closed PRs
+      # #5 and #18. Revisit alongside an MSRV bump + AppError.details typed-enum
+      # migration + formatter::prettier API update.
+      - dependency-name: "specta-typescript"
+        versions: [">=0.0.12"]
