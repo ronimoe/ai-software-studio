@@ -2,11 +2,17 @@ use super::detection::detect_claude;
 use crate::models::EngineDetectionStatus;
 use std::env;
 use std::os::unix::fs::PermissionsExt;
+use std::sync::Mutex;
 use tempfile::TempDir;
+
+// Serializes PATH mutations across the tests in this module so cargo's default
+// parallel runner can't race them. Poison-safe via into_inner().
+static PATH_LOCK: Mutex<()> = Mutex::new(());
 
 /// Make a fake `claude` script on PATH that prints a version string, return the temp dir
 /// (holding the binary) and the previous PATH so the caller can restore it.
 fn with_fake_claude<F: FnOnce()>(version_output: &str, body: F) {
+    let _guard = PATH_LOCK.lock().unwrap_or_else(|p| p.into_inner());
     let dir = TempDir::new().expect("tempdir");
     let bin = dir.path().join("claude");
     let script = format!("#!/bin/sh\necho '{version_output}'\n");
@@ -33,6 +39,7 @@ fn detect_claude_returns_ready_when_binary_on_path() {
 
 #[test]
 fn detect_claude_returns_not_installed_when_missing() {
+    let _guard = PATH_LOCK.lock().unwrap_or_else(|p| p.into_inner());
     let prev = env::var("PATH").unwrap_or_default();
     // SAFETY: scoped to this test; restored before return.
     unsafe { env::set_var("PATH", "/nonexistent/path/only"); }
