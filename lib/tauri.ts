@@ -134,6 +134,32 @@ const mockImpl: Commands = {
     await sleep(40);
     return { status: "ok" as const, data: { taskId, running: false } };
   },
+  getChangedFiles: async (_taskId: string) => {
+    await sleep(40);
+    return {
+      status: "ok" as const,
+      data: [
+        { path: "src/auth/magic-link.ts", status: "modified" as const, additions: 14, deletions: 3 },
+        { path: "src/middleware.ts", status: "modified" as const, additions: 2, deletions: 0 },
+        { path: "tests/auth.test.ts", status: "added" as const, additions: 24, deletions: 0 },
+      ],
+    };
+  },
+  getFileDiff: async (_taskId: string, path: string) => {
+    await sleep(40);
+    return {
+      status: "ok" as const,
+      data: `--- a/${path}\n+++ b/${path}\n@@ -1,3 +1,4 @@\n line one\n-line two\n+line two (changed)\n+line three (new)\n line four\n`,
+    };
+  },
+  reconcileAfterExit: async (taskId: string) => {
+    await sleep(40);
+    const task = mockTasks.find((t) => t.id === taskId);
+    if (!task) {
+      return { status: "error" as const, error: { code: "notFound" as const, message: `task ${taskId} not found`, details: null } };
+    }
+    return { status: "ok" as const, data: { ...task, status: "reviewReady" as const } };
+  },
 };
 
 function pickImpl(): Commands {
