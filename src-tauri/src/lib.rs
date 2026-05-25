@@ -19,7 +19,7 @@ pub mod verification;
 use state::AppState;
 #[cfg(not(test))]
 use tauri::Manager;
-use tauri_specta::{collect_commands, Builder};
+use tauri_specta::{collect_commands, collect_events, Builder};
 
 #[cfg(not(test))]
 pub fn run() {
@@ -35,6 +35,13 @@ pub fn run() {
             commands::verification::list_verification,
             commands::worktrees::create_worktree,
             commands::worktrees::remove_worktree,
+            commands::runs::start_task,
+            commands::runs::stop_task,
+            commands::runs::get_run_status,
+        ])
+        .events(collect_events![
+            crate::process::TaskOutput,
+            crate::process::TaskExit,
         ]);
 
     #[cfg(debug_assertions)]
@@ -50,9 +57,19 @@ pub fn run() {
         .invoke_handler(specta_builder.invoke_handler())
         .setup(move |app| {
             specta_builder.mount_events(app);
-            let state = tauri::async_runtime::block_on(AppState::init())
-                .map_err(|e| format!("AppState::init failed: {e}"))?;
-            app.manage(state);
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                match AppState::init().await {
+                    Ok(state) => {
+                        state.process.set_handle(handle.clone()).await;
+                        handle.manage(state);
+                    }
+                    Err(e) => {
+                        eprintln!("FATAL: AppState::init failed: {e}");
+                        std::process::exit(1);
+                    }
+                }
+            });
             Ok(())
         })
         .run(tauri::generate_context!())
@@ -77,6 +94,13 @@ mod export_bindings_test {
                 commands::verification::list_verification,
                 commands::worktrees::create_worktree,
                 commands::worktrees::remove_worktree,
+                commands::runs::start_task,
+                commands::runs::stop_task,
+                commands::runs::get_run_status,
+            ])
+            .events(collect_events![
+                crate::process::TaskOutput,
+                crate::process::TaskExit,
             ]);
         builder
             .export(specta_typescript::Typescript::default(), "../lib/bindings.ts")

@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.5] — 2026-05-25
+
+Click **Start** on a `WorktreeCreated` task and the app now spawns the real `claude` binary inside the worktree, streams its stdout/stderr line-by-line to a live terminal view, and lets you hit **Stop** to terminate it (SIGTERM, then SIGKILL after 2s). The agent reads the managed `CLAUDE.md` from Plan 3 as its priming context. This is the first plan that makes the app actually do something — every prior plan was scaffolding for this moment.
+
+### Added
+
+- **`detect_claude`** (`src-tauri/src/engines/detection.rs`) — real PATH scan + `claude --version` shell + semver-ish parse. Returns `EngineStatus { status: Ready | Detected | NotInstalled, version, binary_path }`. `Ready` means binary found AND version parsed; `Detected` means binary found but version unparseable. `EngineService::detect` calls it via `tokio::task::spawn_blocking` so the sync `which`/`Command::output` doesn't stall the runtime. 3 tests, gated by a `static Mutex<()>` because the tests mutate process-global PATH and cargo runs them in parallel by default.
+- **`ProcessRunner`** (`src-tauri/src/process/mod.rs`) — owns a `dashmap::DashMap<task_id, Arc<Mutex<tokio::process::Child>>>` registry, spawns processes with piped stdio + `kill_on_drop`, and dispatches three tokio tasks per spawn: one forwarding stdout lines, one forwarding stderr lines, and a reaper that `wait()`s on the child, emits `task-exit`, and unregisters. `stop` sends SIGTERM via `libc::kill`, polls the registry for 2s, then falls back to `child.kill().await` (SIGKILL). `stop` on an unknown task_id is a no-op. 3 tests cover spawn+auto-cleanup, stop kills long-running, and unknown-task no-op.
+- **`ClaudeCodeAdapter`** (`src-tauri/src/engines/adapters/claude_code.rs`) — thin wrapper that builds the argv (`--print <prompt>`) and delegates to `ProcessRunner::spawn`. Prompt is intentionally minimal — it tells the agent to read `CLAUDE.md`, follow the rules and the linked `.aistudio/task-brief.md`, write a failing test first, stay inside the worktree, and summarize on done. All of the per-task content lives in the managed `CLAUDE.md` that Plan 3 writes.
+- **`TaskOutput` and `TaskExit` event types** (`src-tauri/src/process/mod.rs`) — registered via `tauri-specta`'s `collect_events![]` so they appear in `lib/bindings.ts` with typed `events.taskOutput.listen(cb)` and `events.taskExit.listen(cb)` helpers. Struct names are kebab-cased into the event identifiers (`task-output`, `task-exit`).
+- **`start_task` / `stop_task` / `get_run_status` Tauri commands** (`src-tauri/src/commands/runs.rs`) — `start_task` validates the task is in `WorktreeCreated`/`Stopped`/`Failed`, looks up the worktree path, detects the `claude` binary on PATH, delegates to `ClaudeCodeAdapter::start`, then transitions the task to `Running`. `stop_task` calls `ProcessRunner::stop` and transitions to `Stopped`. `get_run_status` returns `{ taskId, running }`.
+- **`AppState` holds `Arc<ProcessRunner>`** (`src-tauri/src/state.rs`) — and `lib.rs` setup wires `process.set_handle(app_handle)` so the runner can emit Tauri events. Setup is now async-spawned (was `block_on`) because `set_handle` is async.
+- **`useDetectEngines` hook** (`features/engines/use-detect-engines.ts`) — TanStack Query against `tauri.detectEngines()` with 60s staleTime.
+- **`useStartTask` + `useStopTask` mutations** (`features/runs/use-start-task.ts`, `use-stop-task.ts`) — invalidate `["tasks", projectId]` and `["task", id]` on success so the panel re-fetches the new status.
+- **`useTaskOutput` hook** (`features/runs/use-task-output.ts`) — subscribes to `events.taskOutput.listen()` and `events.taskExit.listen()`, filters by `taskId`, exposes `{ lines: TerminalLine[], exitCode: number | null | undefined }`. Wrapped in try/catch so dev mode (no Tauri runtime) doesn't crash; events just don't fire.
+- **`TerminalView` component** (`components/panels/agent-workspace/terminal-view.tsx`) — renders streamed lines (stderr in amber), auto-scrolls on append, shows a `— process exited (code N) —` footer when `exitCode` is defined. Mounted with `key={task.id}` so React remounts on task switch (replaces an in-effect state reset that the new `react-hooks/set-state-in-effect` lint rule flags).
+- **`startTask` / `stopTask` / `getRunStatus` mocks** (`lib/tauri.ts`) — so `pnpm dev` continues to exercise the new UI without compiling Rust.
+
+### Changed
+
+- **`StartButton` renders status-aware variants** (`components/panels/agent-workspace/start-button.tsx`) — `Create worktree` (icon: GitBranch) when status is `Draft`, `Start` (icon: Play) when `WorktreeCreated`/`Stopped`/`Failed`, `Stop` (icon: Square, destructive variant) when `Running`/`VerificationRunning`. Single component, three behaviors.
+- **`EngineService::detect` returns real data** (`src-tauri/src/engines/mod.rs`) — was returning the `fixtures::engines()` mock. Now calls `detect_claude` via `spawn_blocking`.
+- **`AgentWorkspacePanel` shows live `TerminalView`** (`components/panels/agent-workspace/index.tsx`) — when the task status is anything other than `Draft`, a "Live Output" section renders the terminal between Acceptance Criteria and Activity Log.
+
+### Dependencies
+
+- `dashmap = "6"` — lockless task_id→Child registry inside `ProcessRunner`.
+- `libc = "0.2"` — `libc::kill(pid, SIGTERM)` for graceful process termination.
+- `tokio` dev-deps gain `"time"` — tests need `sleep`/`Duration`.
+
+### Notes
+
+- The event payload struct names `TaskOutput` and `TaskExit` were chosen so `tauri-specta`'s `#[derive(Event)]` macro (which kebab-cases the struct name into the event identifier) produces `"task-output"` and `"task-exit"` — matching the strings the Rust code actually emits.
+- Detection tests serialize PATH mutations through a `static Mutex<()>`. Cargo's default parallel test runner races on the global PATH otherwise (confirmed: 1-in-10 flake without the lock).
+
 ## [0.0.4] — 2026-05-19
 
 The "Create worktree" button is live. Clicking it on a draft task spawns a real git worktree under `~/Library/Application Support/AI Software Studio/worktrees/{project}/{task}` off the project's default branch, drops a managed `CLAUDE.md` and `.aistudio/task-brief.md` into it, and transitions the task to `WorktreeCreated`. If anything goes wrong mid-creation, the worktree, its branch ref, and any installed files are rolled back so the user's repo is left exactly as it was. This is the project's first compensating-action operation — the template Plans 4–7 will follow.

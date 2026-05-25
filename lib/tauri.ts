@@ -108,6 +108,32 @@ const mockImpl: Commands = {
     await sleep(80);
     return { status: "ok" as const, data: null };
   },
+  startTask: async (taskId: string) => {
+    await sleep(80);
+    const task = mockTasks.find((t) => t.id === taskId);
+    if (!task) {
+      return {
+        status: "error" as const,
+        error: { code: "notFound" as const, message: `task ${taskId} not found`, details: null },
+      };
+    }
+    return { status: "ok" as const, data: { ...task, status: "running" as const } };
+  },
+  stopTask: async (taskId: string) => {
+    await sleep(80);
+    const task = mockTasks.find((t) => t.id === taskId);
+    if (!task) {
+      return {
+        status: "error" as const,
+        error: { code: "notFound" as const, message: `task ${taskId} not found`, details: null },
+      };
+    }
+    return { status: "ok" as const, data: { ...task, status: "stopped" as const } };
+  },
+  getRunStatus: async (taskId: string) => {
+    await sleep(40);
+    return { status: "ok" as const, data: { taskId, running: false } };
+  },
 };
 
 function pickImpl(): Commands {
