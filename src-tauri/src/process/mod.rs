@@ -2,25 +2,26 @@ use crate::error::AppError;
 use dashmap::DashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
-use tauri::{AppHandle, Emitter};
+use tauri::AppHandle;
+use tauri_specta::Event;
 use tokio::process::Child;
 use tokio::sync::Mutex;
 
-#[derive(Clone, serde::Serialize, specta::Type)]
+#[derive(Clone, serde::Serialize, serde::Deserialize, specta::Type, Event)]
 #[serde(rename_all = "camelCase")]
-pub struct OutputLine {
+pub struct TaskOutput {
     pub task_id: String,
     pub stream: OutputStream,
     pub text: String,
 }
 
-#[derive(Clone, Copy, serde::Serialize, specta::Type)]
+#[derive(Clone, Copy, serde::Serialize, serde::Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub enum OutputStream { Stdout, Stderr }
 
-#[derive(Clone, serde::Serialize, specta::Type)]
+#[derive(Clone, serde::Serialize, serde::Deserialize, specta::Type, Event)]
 #[serde(rename_all = "camelCase")]
-pub struct RunExit {
+pub struct TaskExit {
     pub task_id: String,
     pub exit_code: Option<i32>,
     pub signaled: bool,
@@ -83,7 +84,7 @@ impl ProcessRunner {
         if let Some(h) = handle_opt.clone() {
             tokio::spawn(forward_lines(stderr, task_id_owned.clone(), OutputStream::Stderr, h));
         }
-        // Reaper: when the process exits, emit run-exit and unregister.
+        // Reaper: when the process exits, emit task-exit and unregister.
         let handle_for_reaper = handle_opt;
         let running_for_reaper = running.clone();
         let task_id_for_reaper = task_id_owned;
@@ -92,7 +93,7 @@ impl ProcessRunner {
             let exit = guard.wait().await;
             running_for_reaper.remove(&task_id_for_reaper);
             if let Some(h) = handle_for_reaper {
-                let payload = RunExit {
+                let payload = TaskExit {
                     task_id: task_id_for_reaper.clone(),
                     exit_code: exit.as_ref().ok().and_then(|s| s.code()),
                     signaled: exit
@@ -101,7 +102,7 @@ impl ProcessRunner {
                         .map(|s| s.code().is_none())
                         .unwrap_or(false),
                 };
-                let _ = h.emit("task-exit", payload);
+                let _ = payload.emit(&h);
             }
         });
 
@@ -150,8 +151,8 @@ async fn forward_lines<R: tokio::io::AsyncRead + Unpin + Send + 'static>(
     use tokio::io::{AsyncBufReadExt, BufReader};
     let mut lines = BufReader::new(reader).lines();
     while let Ok(Some(text)) = lines.next_line().await {
-        let payload = OutputLine { task_id: task_id.clone(), stream, text };
-        let _ = handle.emit("task-output", payload);
+        let payload = TaskOutput { task_id: task_id.clone(), stream, text };
+        let _ = payload.emit(&handle);
     }
 }
 

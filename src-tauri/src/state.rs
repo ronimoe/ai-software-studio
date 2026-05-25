@@ -4,10 +4,12 @@ use crate::{
     engines::EngineService,
     error::AppError,
     git::GitService,
+    process::ProcessRunner,
     projects::ProjectService,
     tasks::TaskService,
     verification::VerificationService,
 };
+use std::sync::Arc;
 
 pub struct AppState {
     pub db: Db,
@@ -17,6 +19,7 @@ pub struct AppState {
     pub verification: VerificationService,
     pub git: GitService,
     pub worktree_context: WorktreeContextService,
+    pub process: Arc<ProcessRunner>,
 }
 
 impl AppState {
@@ -29,6 +32,7 @@ impl AppState {
             verification: VerificationService::new(),
             git: GitService::new(),
             worktree_context: WorktreeContextService::new(),
+            process: Arc::new(ProcessRunner::new()),
             db,
         })
     }

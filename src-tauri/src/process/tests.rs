@@ -58,4 +58,4 @@ async fn stop_unknown_task_is_a_noop_ok() {
 
 // Suppress unused-import warnings for items only consumed by other tests.
 #[allow(unused_imports)]
-use {mpsc as _, OutputLine as _, OutputStream as _, RunExit as _};
+use {mpsc as _, OutputStream as _, TaskExit as _, TaskOutput as _};
