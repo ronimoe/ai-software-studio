@@ -1,4 +1,10 @@
-use crate::{error::AppError, fixtures, models::EngineStatus};
+pub mod adapters;
+pub mod detection;
+
+#[cfg(test)]
+mod detection_tests;
+
+use crate::{error::AppError, models::EngineStatus};
 
 pub struct EngineService;
 
@@ -6,11 +12,15 @@ impl EngineService {
     pub fn new() -> Self { Self }
 
     pub async fn list(&self) -> Result<Vec<EngineStatus>, AppError> {
-        Ok(fixtures::engines())
+        // For v0.1, list and detect return the same thing.
+        self.detect().await
     }
 
-    /// Phase 1 stub. Replaced with real `which`/`--version` shelling in a later phase.
     pub async fn detect(&self) -> Result<Vec<EngineStatus>, AppError> {
-        Ok(fixtures::engines())
+        let claude = tokio::task::spawn_blocking(detection::detect_claude)
+            .await
+            .map_err(|e| AppError::internal(format!("join: {e}")))?
+            ?;
+        Ok(vec![claude])
     }
 }
