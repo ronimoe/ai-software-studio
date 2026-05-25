@@ -7,6 +7,8 @@ import { useTask } from "@/features/tasks/use-tasks";
 import { StatusPill } from "./status-pill";
 import { EvidenceArtifacts } from "./evidence-artifacts";
 import { RunVerificationButton } from "./run-verification-button";
+import { CopyReportButton } from "./copy-report-button";
+import { CreatePrButton } from "./create-pr-button";
 
 export function ReviewRoomPanel() {
   const activeTaskId = useUiStore((s) => s.activeTaskId);
@@ -21,7 +23,11 @@ export function ReviewRoomPanel() {
       badge="Verification"
       actions={
         activeTaskId ? (
-          <RunVerificationButton taskId={activeTaskId} hasWorktree={hasWorktree} />
+          <div className="flex items-center gap-1">
+            <CopyReportButton taskId={activeTaskId} />
+            <RunVerificationButton taskId={activeTaskId} hasWorktree={hasWorktree} />
+            <CreatePrButton taskId={activeTaskId} hasWorktree={hasWorktree} />
+          </div>
         ) : undefined
       }
     >

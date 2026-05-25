@@ -44,6 +44,9 @@ pub fn run() {
             commands::diffs::get_changed_files,
             commands::diffs::get_file_diff,
             commands::runs::reconcile_after_exit,
+            commands::pr::detect_github,
+            commands::pr::render_pr_report,
+            commands::pr::create_pr,
         ])
         .events(collect_events![
             crate::process::TaskOutput,
@@ -60,6 +63,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .invoke_handler(specta_builder.invoke_handler())
         .setup(move |app| {
             specta_builder.mount_events(app);
@@ -109,6 +113,9 @@ mod export_bindings_test {
                 commands::diffs::get_changed_files,
                 commands::diffs::get_file_diff,
                 commands::runs::reconcile_after_exit,
+                commands::pr::detect_github,
+                commands::pr::render_pr_report,
+                commands::pr::create_pr,
             ])
             .events(collect_events![
                 crate::process::TaskOutput,
