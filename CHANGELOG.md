@@ -74,7 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`gh` integration is non-draft only in the UI** — the `CreatePrRequest.draft` field exists on the wire and `create_pr` honors it, but the button passes `draft: false`. A toggle is a v0.2 nicety.
 - **Plan 7 tests skip `$PATH` mutation entirely.** The plan's three `detect()`-via-fake-gh tests would have raced on the global `$PATH` env var under cargo's default parallel runner. Refactored: extract `which_in(name, path_var)` so PATH is an argument, and test `parse_account` directly against realistic `gh auth status` output. Net 7 deterministic unit tests instead of 3 racey integration ones.
 
-
+## [0.0.5] — 2026-05-25
 
 Click **Start** on a `WorktreeCreated` task and the app now spawns the real `claude` binary inside the worktree, streams its stdout/stderr line-by-line to a live terminal view, and lets you hit **Stop** to terminate it (SIGTERM, then SIGKILL after 2s). The agent reads the managed `CLAUDE.md` from Plan 3 as its priming context. This is the first plan that makes the app actually do something — every prior plan was scaffolding for this moment.
 
