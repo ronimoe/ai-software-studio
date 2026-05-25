@@ -85,6 +85,41 @@ const mockImpl: Commands = {
     await sleep(50);
     return { status: "ok", data: mockVerification.filter((v) => v.taskId === taskId) };
   },
+  runVerification: async (taskId: string) => {
+    await sleep(400);
+    return {
+      status: "ok" as const,
+      data: {
+        id: `vr-${Date.now()}`,
+        taskId,
+        startedAt: new Date().toISOString(),
+        checks: [
+          { kind: "install", status: "passed" as const, durationMs: 800, logExcerpt: "Lockfile up to date" },
+          { kind: "typecheck", status: "passed" as const, durationMs: 1100, logExcerpt: null },
+          { kind: "lint", status: "warning" as const, durationMs: 400, logExcerpt: "1 warning" },
+          { kind: "test", status: "passed" as const, durationMs: 2200, logExcerpt: "42 passed" },
+          { kind: "build", status: "passed" as const, durationMs: 3000, logExcerpt: null },
+        ],
+      },
+    };
+  },
+  getVerificationSettings: async (_projectId: string) => {
+    await sleep(20);
+    return {
+      status: "ok" as const,
+      data: {
+        install: "pnpm install",
+        typecheck: "pnpm typecheck",
+        lint: "pnpm lint",
+        test: "pnpm test",
+        build: "pnpm build",
+      },
+    };
+  },
+  setVerificationSettings: async (_projectId: string, _settings) => {
+    await sleep(20);
+    return { status: "ok" as const, data: null };
+  },
   createWorktree: async (taskId: string) => {
     await sleep(120);
     const task = mockTasks.find((t) => t.id === taskId);
