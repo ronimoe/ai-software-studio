@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PanelFrame } from "@/components/layout/panel-frame";
 import { useUiStore } from "@/stores/ui-store";
@@ -8,6 +7,7 @@ import { useTask } from "@/features/tasks/use-tasks";
 import { AcceptanceList } from "./acceptance-list";
 import { ActivityLog } from "./activity-log";
 import { StartButton } from "./start-button";
+import { TerminalView } from "./terminal-view";
 
 export function AgentWorkspacePanel() {
   const activeTaskId = useUiStore((s) => s.activeTaskId);
@@ -21,20 +21,17 @@ export function AgentWorkspacePanel() {
     );
   }
 
+  const showTerminal = task.status !== "draft";
+
   return (
     <PanelFrame
       title="Agent Workspace"
       subtitle="Watch first. Evidence-first. Human accountable."
       badge={task.status}
       actions={
-        task.status === "draft" ? (
-          <StartButton taskId={task.id} />
-        ) : (
-          <div className="flex items-center gap-1">
-            <Button size="sm" variant="ghost">Request Changes</Button>
-            <Button size="sm">Approve</Button>
-          </div>
-        )
+        <div className="flex items-center gap-1">
+          <StartButton taskId={task.id} status={task.status} />
+        </div>
       }
     >
       <div className="space-y-4">
@@ -58,6 +55,16 @@ export function AgentWorkspacePanel() {
           </h4>
           <AcceptanceList items={task.acceptanceCriteria} />
         </div>
+
+        {showTerminal && (
+          <div>
+            <h4 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Live Output
+            </h4>
+            {/* key forces remount on task switch so useState resets cleanly */}
+            <TerminalView key={task.id} taskId={task.id} />
+          </div>
+        )}
 
         <div>
           <h4 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">

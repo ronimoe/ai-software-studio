@@ -14,8 +14,6 @@ export function useTaskOutput(taskId: string | null) {
 
   useEffect(() => {
     if (!taskId) return;
-    setLines([]);
-    setExitCode(undefined);
     let unlistenOut: UnlistenFn | undefined;
     let unlistenExit: UnlistenFn | undefined;
 
