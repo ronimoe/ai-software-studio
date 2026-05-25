@@ -1,3 +1,4 @@
+pub mod diffs;
 pub mod engines;
 pub mod projects;
 pub mod runs;
