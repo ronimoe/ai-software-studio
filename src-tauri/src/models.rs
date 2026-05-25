@@ -107,3 +107,23 @@ pub struct CreateTaskRequest {
     pub constraints: Vec<String>,
     pub selected_engine: Option<String>,
 }
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Type, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum ChangeStatus {
+    Added,
+    Modified,
+    Deleted,
+    Renamed,
+    Untracked,
+    Conflicted,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ChangedFile {
+    pub path: String,
+    pub status: ChangeStatus,
+    pub additions: u32,
+    pub deletions: u32,
+}

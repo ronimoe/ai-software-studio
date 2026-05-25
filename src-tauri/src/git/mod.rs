@@ -1,7 +1,13 @@
 pub mod worktree_paths;
+pub mod status;
+pub mod diff;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod status_tests;
+#[cfg(test)]
+mod diff_tests;
 
 use crate::error::AppError;
 use std::path::{Path, PathBuf};
@@ -11,6 +17,14 @@ pub struct GitService;
 
 impl GitService {
     pub fn new() -> Self { Self }
+
+    pub fn status(&self, worktree: &std::path::Path) -> Result<Vec<crate::models::ChangedFile>, AppError> {
+        status::status(worktree)
+    }
+
+    pub fn diff(&self, worktree: &std::path::Path, path: &str) -> Result<String, AppError> {
+        diff::diff(worktree, path)
+    }
 
     /// Create a new branch and add a worktree pointing at it.
     ///

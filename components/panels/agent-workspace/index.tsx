@@ -6,6 +6,7 @@ import { useUiStore } from "@/stores/ui-store";
 import { useTask } from "@/features/tasks/use-tasks";
 import { AcceptanceList } from "./acceptance-list";
 import { ActivityLog } from "./activity-log";
+import { ChangedFilesPanel } from "./changed-files-panel";
 import { StartButton } from "./start-button";
 import { TerminalView } from "./terminal-view";
 
@@ -63,6 +64,15 @@ export function AgentWorkspacePanel() {
             </h4>
             {/* key forces remount on task switch so useState resets cleanly */}
             <TerminalView key={task.id} taskId={task.id} />
+          </div>
+        )}
+
+        {task.worktreePath && (
+          <div>
+            <h4 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Changed Files
+            </h4>
+            <ChangedFilesPanel taskId={task.id} />
           </div>
         )}
 

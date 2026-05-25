@@ -68,3 +68,34 @@ pub async fn get_run_status(
         running: state.process.is_running(&task_id),
     })
 }
+
+#[tauri::command]
+#[specta::specta]
+pub async fn reconcile_after_exit(
+    state: State<'_, AppState>,
+    task_id: String,
+) -> Result<Task, AppError> {
+    let task = state.tasks.get(&task_id).await?;
+    if task.status != TaskStatus::Running {
+        return Ok(task);
+    }
+    let wt = match task.worktree_path.clone() {
+        Some(p) => p,
+        None => {
+            state.tasks.update_status(&task.id, TaskStatus::Stopped).await?;
+            return state.tasks.get(&task.id).await;
+        }
+    };
+    let path = std::path::PathBuf::from(wt);
+    let changed: Vec<crate::models::ChangedFile> =
+        tokio::task::spawn_blocking(move || crate::git::status::status(&path))
+            .await
+            .map_err(|e| AppError::internal(format!("join: {e}")))??;
+    let new_status = if changed.is_empty() {
+        TaskStatus::Stopped
+    } else {
+        TaskStatus::ReviewReady
+    };
+    state.tasks.update_status(&task.id, new_status).await?;
+    state.tasks.get(&task.id).await
+}

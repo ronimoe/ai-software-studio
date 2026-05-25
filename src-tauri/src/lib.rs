@@ -38,6 +38,9 @@ pub fn run() {
             commands::runs::start_task,
             commands::runs::stop_task,
             commands::runs::get_run_status,
+            commands::diffs::get_changed_files,
+            commands::diffs::get_file_diff,
+            commands::runs::reconcile_after_exit,
         ])
         .events(collect_events![
             crate::process::TaskOutput,
@@ -97,6 +100,9 @@ mod export_bindings_test {
                 commands::runs::start_task,
                 commands::runs::stop_task,
                 commands::runs::get_run_status,
+                commands::diffs::get_changed_files,
+                commands::diffs::get_file_diff,
+                commands::runs::reconcile_after_exit,
             ])
             .events(collect_events![
                 crate::process::TaskOutput,
