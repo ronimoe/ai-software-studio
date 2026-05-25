@@ -195,6 +195,31 @@ const mockImpl: Commands = {
     }
     return { status: "ok" as const, data: { ...task, status: "reviewReady" as const } };
   },
+  detectGithub: async () => {
+    await sleep(50);
+    return {
+      status: "ok" as const,
+      data: { auth: "authed" as const, binaryPath: "/opt/homebrew/bin/gh", account: "ronimoe" },
+    };
+  },
+  renderPrReport: async (_taskId: string) => {
+    await sleep(40);
+    return {
+      status: "ok" as const,
+      data: "# AI Software Studio Evidence Report\n\n## Task\n\n**Mock task**\n\n…",
+    };
+  },
+  createPr: async (request) => {
+    await sleep(300);
+    return {
+      status: "ok" as const,
+      data: {
+        url: "https://github.com/ronimoe/example/pull/42",
+        branch: `aistudio/task-${request.taskId.slice(0, 8)}`,
+        base: request.baseBranch ?? "main",
+      },
+    };
+  },
 };
 
 function pickImpl(): Commands {
