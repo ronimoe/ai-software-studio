@@ -128,20 +128,3 @@ pub fn engines() -> Vec<EngineStatus> {
     ]
 }
 
-pub fn verification_for_task(task_id: &str) -> Vec<VerificationRun> {
-    if task_id != "task-042" {
-        return vec![];
-    }
-    vec![VerificationRun {
-        id: "vr-001".into(),
-        task_id: task_id.into(),
-        started_at: "2026-05-17T12:00:00Z".into(),
-        checks: vec![
-            VerificationCheck { kind: "install".into(), status: VerificationStatus::Passed, duration_ms: Some(8400), log_excerpt: Some("Lockfile up to date".into()) },
-            VerificationCheck { kind: "typecheck".into(), status: VerificationStatus::Passed, duration_ms: Some(3200), log_excerpt: None },
-            VerificationCheck { kind: "lint".into(), status: VerificationStatus::Warning, duration_ms: Some(1100), log_excerpt: Some("2 warnings: unused import in auth.ts".into()) },
-            VerificationCheck { kind: "test".into(), status: VerificationStatus::Passed, duration_ms: Some(18000), log_excerpt: Some("142 passed, 0 failed".into()) },
-            VerificationCheck { kind: "build".into(), status: VerificationStatus::Failed, duration_ms: Some(22000), log_excerpt: Some("Type error in middleware.ts:88".into()) },
-        ],
-    }]
-}

@@ -29,7 +29,7 @@ impl AppState {
             tasks: TaskService::new(db.clone()),
             projects: ProjectService::new(db.clone()),
             engines: EngineService::new(),
-            verification: VerificationService::new(),
+            verification: VerificationService::new(db.clone()),
             git: GitService::new(),
             worktree_context: WorktreeContextService::new(),
             process: Arc::new(ProcessRunner::new()),
