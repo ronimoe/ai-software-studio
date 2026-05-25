@@ -22,9 +22,10 @@ updates:
       # Closed PR #15. Revisit when we deliberately bump MSRV.
       - dependency-name: "sqlx"
         versions: [">=0.9"]
-      # specta-typescript 0.0.12 pulls a newer specta that uses the unstable
-      # `debug_closure_helpers` Rust feature (stabilized in 1.90). Closed PRs
-      # #5 and #18. Revisit alongside an MSRV bump + AppError.details typed-enum
-      # migration + formatter::prettier API update.
+      # specta-typescript 0.0.8+ pulls a newer specta (rc.24) that uses
+      # unstable Rust features (`debug_closure_helpers`, `const TypeId::of`,
+      # stabilized in 1.91). Closed PRs #5, #18, and broken-after-merge #24.
+      # Revisit alongside an MSRV bump + AppError.details typed-enum migration
+      # + formatter::prettier API update.
       - dependency-name: "specta-typescript"
-        versions: [">=0.0.12"]
+        versions: [">=0.0.8"]
