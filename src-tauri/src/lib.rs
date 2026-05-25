@@ -40,6 +40,7 @@ pub fn run() {
             commands::runs::get_run_status,
             commands::diffs::get_changed_files,
             commands::diffs::get_file_diff,
+            commands::runs::reconcile_after_exit,
         ])
         .events(collect_events![
             crate::process::TaskOutput,
@@ -101,6 +102,7 @@ mod export_bindings_test {
                 commands::runs::get_run_status,
                 commands::diffs::get_changed_files,
                 commands::diffs::get_file_diff,
+                commands::runs::reconcile_after_exit,
             ])
             .events(collect_events![
                 crate::process::TaskOutput,
