@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useTaskOutput } from "@/features/runs/use-task-output";
+import { useReconcileAfterExit } from "@/features/runs/use-reconcile-after-exit";
 
 interface Props {
   taskId: string;
@@ -14,6 +15,12 @@ export function TerminalView({ taskId }: Props) {
   useEffect(() => {
     ref.current?.scrollTo({ top: ref.current.scrollHeight });
   }, [lines.length]);
+
+  const reconcile = useReconcileAfterExit();
+  useEffect(() => {
+    if (exitCode !== undefined) reconcile.mutate(taskId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exitCode, taskId]);
 
   return (
     <div className="rounded-md border bg-muted/30 font-mono">
