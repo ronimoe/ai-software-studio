@@ -44,6 +44,9 @@ pub fn run() {
             commands::diffs::get_changed_files,
             commands::diffs::get_file_diff,
             commands::runs::reconcile_after_exit,
+            commands::pr::detect_github,
+            commands::pr::render_pr_report,
+            commands::pr::create_pr,
         ])
         .events(collect_events![
             crate::process::TaskOutput,
@@ -109,6 +112,9 @@ mod export_bindings_test {
                 commands::diffs::get_changed_files,
                 commands::diffs::get_file_diff,
                 commands::runs::reconcile_after_exit,
+                commands::pr::detect_github,
+                commands::pr::render_pr_report,
+                commands::pr::create_pr,
             ])
             .events(collect_events![
                 crate::process::TaskOutput,
