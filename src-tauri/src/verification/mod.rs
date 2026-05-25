@@ -1,3 +1,11 @@
+pub mod runner;
+pub mod repository;
+pub mod settings;
+
+#[cfg(test)] mod runner_tests;
+#[cfg(test)] mod repository_tests;
+#[cfg(test)] mod settings_tests;
+
 use crate::{error::AppError, fixtures, models::VerificationRun};
 
 pub struct VerificationService;
