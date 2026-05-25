@@ -7,7 +7,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.0.5] — 2026-05-25
+## [0.1.0] — 2026-05-25
+
+**v0.1 milestone.** The loop closes end-to-end: pick a task, get an isolated git worktree, run the engine in a live terminal, see exactly which files changed and their diffs, run install/typecheck/lint/test/build verification with persisted results, copy a Markdown evidence report to the clipboard, and open a real GitHub PR via `gh` — all from one window. This release bundles Plans 5, 6, and 7 plus a hotfix for a Dependabot-induced specta drift.
+
+### Added
+
+#### Changed Files panel + diff viewer (Plan 5)
+
+- **`git::status`** (`src-tauri/src/git/status.rs`) — parses `git status --porcelain=v1 -z` into `Vec<ChangedFile>` with NUL-separated record handling and a `classify(X, Y)` table that maps status pairs to `Added`/`Modified`/`Deleted`/`Renamed`/`Untracked`/`Conflicted`. Renamed records consume two NUL-separated entries (original + new). 7 tests covering clean repo, modified/added/deleted/untracked, multi-file ordering, and the "not a git dir" error path.
+- **`git::diff`** (`src-tauri/src/git/diff.rs`) — `git diff --no-color HEAD -- <path>` for tracked files. For untracked files, runs `git add --intent-to-add <path>` first so the file shows up in the diff, then `git reset -- <path>` to unstage the intent-to-add marker — leaving the worktree state unchanged. 3 tests for modified, untracked-via-intent-to-add, and the empty-for-unchanged invariant.
+- **`get_changed_files` + `get_file_diff` Tauri commands** (`src-tauri/src/commands/diffs.rs`) — both look up the task, error on `task has no worktree`, and `spawn_blocking` the git call. `ChangedFile` + `ChangeStatus` exported as cross-boundary types.
+- **`reconcile_after_exit` command** (`src-tauri/src/commands/runs.rs`) — called from the frontend when the agent process exits. Reads `git status` against the worktree; if there are changes, transitions `Running → ReviewReady`; if clean, transitions to `Stopped`. No-op if the task is not currently Running. Worktree-less tasks transition to Stopped.
+- **`useChangedFiles`, `useFileDiff`, `useReconcileAfterExit` hooks** (`features/diffs/*`, `features/runs/use-reconcile-after-exit.ts`) — TanStack Query bindings; `useChangedFiles` polls every 5 s. `TerminalView` fires `reconcileAfterExit.mutate(taskId)` in a `useEffect` when its `exitCode` flips from `undefined` to a value.
+- **`ChangedFilesPanel`** (`components/panels/agent-workspace/changed-files-panel.tsx`) — lists each changed file with a lucide-react status icon (FilePlus/FileEdit/FileMinus/FileQuestion/GitMerge), the path in monospace, and `+adds −dels` counters. Clicking a file opens the dialog. 4 Vitest specs cover loading, empty, list-render, dialog-open.
+- **`DiffViewerDialog`** (`components/panels/agent-workspace/diff-viewer-dialog.tsx`) — shadcn `Dialog` wrapping `react-diff-view`'s split-view `Diff` + `Hunk`. Parses unified-diff text once via `parseDiff` inside `useMemo`. Loading/empty states match the panel. 5 specs covering closed/open/loading/empty/parsed-hunk rendering.
+- **`get_changed_files` / `get_file_diff` / `reconcile_after_exit` mocks** (`lib/tauri.ts`) — three modified files, a plausible unified-diff string, and a mock task transition to `reviewReady`.
+
+#### Verification runner + Review Room (Plan 6)
+
+- **SQLite migration `20260103000000_verification.sql`** — three tables: `verification_runs (id, task_id, started_at, finished_at)`, `verification_checks (id, run_id, kind, status, duration_ms, log_excerpt, position)`, `app_settings (scope, key, value)` with `(scope, key)` as the composite primary key.
+- **`verification::runner::run_single`** (`src-tauri/src/verification/runner.rs`) — shells `sh -c <command>` via `tokio::process::Command` with piped stdout+stderr, reads both streams concurrently in a `tokio::select!` loop into a single buffer, and **tail-bounds the buffer to 4 KB** via `cap_buf` (drains the front when the buffer exceeds 4096 bytes). Empty commands return `Skipped` without spawning. Returns `CheckResult { kind, status, duration_ms, log_excerpt }`. 5 tests covering pass/fail/excerpt-content/4KB-bound/skipped.
+- **`verification::repository::VerificationRepository`** (`src-tauri/src/verification/repository.rs`) — transactional `insert_run(task_id, checks)` writes the run row, the ordered checks (with a `position` column), and a `finished_at` timestamp inside one transaction. `list_for_task` returns runs newest-first by `started_at DESC`. `get(id)` rehydrates a single run with its checks. 2 tests against the in-memory pool.
+- **`verification::settings::SettingsRepository`** (`src-tauri/src/verification/settings.rs`) — per-project verification commands stored under `scope = 'project:{project_id}'`, `key = 'verification.{install|typecheck|lint|test|build}'`. `get_for_project` falls back to `VerificationSettings::default()` (`pnpm install`/`pnpm typecheck`/`pnpm lint`/`pnpm test`/`pnpm build`) when no rows exist. `set_for_project` deletes and reinserts inside a transaction (overwrite semantics). 3 tests covering defaults, round-trip, and overwrite.
+- **`VerificationService::run_for_task`** — orchestrates the install → typecheck → lint → test → build sequence, skipping any command not configured. Each step runs sequentially, captures a result, and the full set is persisted as one run. Returns the rehydrated `VerificationRun`.
+- **Four Tauri commands** (`src-tauri/src/commands/verification.rs`) — `list_verification` (rewritten to hit the repository), `run_verification` (looks up the worktree, calls the service), `get_verification_settings`, `set_verification_settings`.
+- **`useRunVerification`** (`features/verification/use-run-verification.ts`) — mutation that invalidates `["verification", taskId]` on success. **`useVerificationSettings` + `useSetVerificationSettings`** (`features/verification/use-verification-settings.ts`) — query + mutation pair for per-project commands.
+- **`RunVerificationButton`** (`components/panels/review-room/run-verification-button.tsx`) — outline-variant button gated on worktree existence, spinner while pending. 4 Vitest specs cover disabled/enabled/pending/click.
+- **Review Room rewires its actions slot** — the button slots into the panel header alongside the status pills already rendered from the latest verification run.
+- **Three new mocks** in `lib/tauri.ts` for verification commands.
+
+#### GitHub push + `gh pr create` + evidence report (Plan 7)
+
+- **`engines::github`** (`src-tauri/src/engines/github.rs`) — `detect()` calls `which_in("gh", $PATH)`, shells `gh auth status`, parses the `Logged in to github.com as <login>` line via `parse_account`, and returns `GitHubStatus { auth: Authed|NotAuthed|NotInstalled, binary_path, account }`. `push_branch(repo, branch)` runs `git push -u origin <branch>` from the worktree. `create_pr(repo, title, body, base, draft)` shells `gh pr create --title --body --base [--draft]` and pulls the PR URL from the first stdout line containing `github.com`. The `which_in` and `parse_account` helpers are `pub(super)` for testability.
+- **`commands::pr::report::render`** (`src-tauri/src/commands/pr/report.rs`) — pure Markdown renderer composing the evidence report from `Task`, `&[ChangedFile]`, and an optional latest `VerificationRun`. Sections: H1 title, **Task** (title + id + description), **Acceptance Criteria** (with `[x]`/`[ ]` mirroring `satisfied`), **Files Changed** (Markdown table), **Verification** (table with emoji badges ✅/❌/⏭/⚠️/⏳/—), **Constraints** (only when present), and a footer with the task id. 6 tests covering header, files table, verification badges, constraints, satisfied criteria, and the empty-changes message.
+- **Three Tauri commands** (`src-tauri/src/commands/pr/mod.rs`) — `detect_github` (async-wrapped `spawn_blocking`), `render_pr_report` (looks up task + verification + changed files, renders), `create_pr` (pushes the branch, renders the body, creates the PR, transitions the task to `PrPrepared`).
+- **Three hooks** (`features/pr/*`) — `useDetectGithub` (60 s `staleTime` query), `useRenderPrReport` (mutation), `useCreatePr` (mutation, invalidates the task on success).
+- **`CopyReportButton`** (`components/panels/review-room/copy-report-button.tsx`) — ghost-variant button that renders the report via the Tauri command, writes the result to the system clipboard with `@tauri-apps/plugin-clipboard-manager`'s `writeText`, and flashes a green check icon for 1.5 s. 3 Vitest specs covering idle/pending/click+clipboard.
+- **`CreatePrButton`** (`components/panels/review-room/create-pr-button.tsx`) — `gh` auth-gated, with a `title` tooltip that explains the disabled reason (no worktree / not installed / not authed). On click, calls `useCreatePr` with `{ baseBranch: null, draft: false }`. On success, the button transforms into an "Open PR" external link to the returned URL. 6 Vitest specs cover all four disabled cases, the spinner, and the click → success → link transformation.
+- **Review Room actions slot now holds three buttons** — `CopyReportButton`, `RunVerificationButton`, `CreatePrButton` — in a single flex row.
+- **`@tauri-apps/plugin-clipboard-manager` + `tauri-plugin-clipboard-manager`** wired in, with `clipboard-manager:default` added to `capabilities/default.json`.
+- **Three new mocks** in `lib/tauri.ts` for `detectGithub`, `renderPrReport`, `createPr`.
+
+### Changed
+
+- **`fixtures::verification_for_task` removed** (`src-tauri/src/fixtures.rs`). The old fixture returned a hand-rolled `VerificationRun` for `task-042` and was the only consumer of `VerificationCheck`/`VerificationStatus`/`VerificationRun` from the fixtures module. The new repository-backed `list_for_task` replaces it entirely.
+- **`VerificationService::new` now takes `Db`** (`src-tauri/src/verification/mod.rs`, `src-tauri/src/state.rs`) so the service can own its repository and settings instances. `AppState::init` threads `db.clone()` to the constructor.
+- **`Review Room` reads from `useTask`** to know if the active task has a worktree, and gates the verification + PR buttons accordingly.
+
+### Fixed
+
+- **`tokio::select!` double-mutable-borrow bug in `run_single`** — the plan as written shared a single `tmp: [u8; 1024]` buffer between the stdout and stderr `select!` branches, which compiled but tripped E0499 against `&mut tmp` in the second branch on stable. Split into `out_tmp` + `err_tmp`.
+- **Specta drift after Dependabot PR #24** (post-merge fix landed via [PR #26](https://github.com/ronimoe/ai-software-studio/pull/26)) — `specta-typescript` got bumped from `0.0.7` → `0.0.11`, which cascaded `specta` to `2.0.0-rc.24`. rc.24 uses unstable Rust features (`debug_closure_helpers`, `const TypeId::of`) stabilized in 1.91, but `rust-toolchain.toml` pins us to 1.88. `src-tauri/Cargo.lock` is `.gitignore`d so PR CI didn't catch it. Pinned `specta` + `tauri-specta` to `=2.0.0-rc.20` and reverted `specta-typescript` to `=0.0.7`. Tightened the Dependabot ignore for `specta-typescript` from `>=0.0.12` to `>=0.0.8` since `0.0.8`–`0.0.11` all transitively pull the broken rc. Same merge-CI gap pattern as the earlier PR-#5/#7 incident.
+- **Version drift** — `VERSION` and `package.json` were at `0.0.5` but `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json` lagged at `0.0.4`. All four now sit at `0.1.0`.
+
+### Dependencies
+
+- **`react-diff-view ^3.3.3`** + transitive `gitdiff-parser` — unified-diff parsing + split/inline rendering for the diff viewer (Plan 5).
+- **`@testing-library/react ^16.3.2`** + **`@testing-library/jest-dom ^6.9.1`** (devDependencies) — needed for the new component-level Vitest specs that came with each of the three plans.
+- **`tauri-plugin-clipboard-manager = "2"`** (Rust) + **`@tauri-apps/plugin-clipboard-manager ^2.3.2`** (JS) — system clipboard access for the Copy PR Report flow (Plan 7).
+
+### Notes
+
+- **Reconcile-on-exit is frontend-driven**, not Rust-side. The Plan 5 architecture text described extending Plan 4's task-exit reaper, but the actual wiring lives in `TerminalView`'s `useEffect` on `exitCode`. Functional implication: if the user navigates away from the Agent Workspace panel before the engine exits, the auto-transition won't fire. The Rust-side reaper version is a follow-up if that becomes a problem in practice.
+- **Verification persistence is finalized-only** — there's no streaming of live verification output to the UI yet. The user sees a spinner while a run executes, then the status pills appear when it completes. v0.2 will likely stream output similar to the agent terminal.
+- **`gh` integration is non-draft only in the UI** — the `CreatePrRequest.draft` field exists on the wire and `create_pr` honors it, but the button passes `draft: false`. A toggle is a v0.2 nicety.
+- **Plan 7 tests skip `$PATH` mutation entirely.** The plan's three `detect()`-via-fake-gh tests would have raced on the global `$PATH` env var under cargo's default parallel runner. Refactored: extract `which_in(name, path_var)` so PATH is an argument, and test `parse_account` directly against realistic `gh auth status` output. Net 7 deterministic unit tests instead of 3 racey integration ones.
+
+
 
 Click **Start** on a `WorktreeCreated` task and the app now spawns the real `claude` binary inside the worktree, streams its stdout/stderr line-by-line to a live terminal view, and lets you hit **Stop** to terminate it (SIGTERM, then SIGKILL after 2s). The agent reads the managed `CLAUDE.md` from Plan 3 as its priming context. This is the first plan that makes the app actually do something — every prior plan was scaffolding for this moment.
 

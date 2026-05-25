@@ -1,6 +1,6 @@
 [package]
 name = "ai-software-studio"
-version = "0.0.4"
+version = "0.1.0"
 description = "AI Software Studio — local-first AI coding agent command center"
 edition = "2021"
 rust-version = "1.86"
