@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ProjectSwitcher } from "./project-switcher";
 import { ThemeToggle } from "./theme-toggle";
+import pkg from "@/package.json";
 
 export function AppHeader() {
   return (
@@ -34,7 +35,7 @@ export function AppHeader() {
           <button className="px-2 py-1 text-muted-foreground hover:text-foreground">Trace</button>
         </div>
         <Separator orientation="vertical" className="h-6" />
-        <Badge variant="outline" className="hidden text-[10px] sm:inline-flex">v0.0.1</Badge>
+        <Badge variant="outline" className="hidden text-[10px] sm:inline-flex">v{pkg.version}</Badge>
         <ThemeToggle />
         <Avatar className="h-7 w-7">
           <AvatarFallback className="text-[11px]">R</AvatarFallback>
