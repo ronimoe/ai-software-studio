@@ -1,7 +1,7 @@
 pub mod seams;
 pub mod worker;
 pub mod sweep;
-// #[cfg(test)] mod worker_tests;  <- added in a later task
+#[cfg(test)] mod worker_tests;
 
 use crate::{db::Db, error::AppError};
 use serde::{Deserialize, Serialize};
