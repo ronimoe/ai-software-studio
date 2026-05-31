@@ -3,6 +3,7 @@ pub mod commands;
 pub mod config;
 pub mod core;
 pub mod db;
+pub mod dispatch;
 pub mod engines;
 pub mod error;
 pub mod fixtures;
@@ -47,10 +48,16 @@ pub fn run() {
             commands::pr::detect_github,
             commands::pr::render_pr_report,
             commands::pr::create_pr,
+            commands::dispatch::enqueue_task,
+            commands::dispatch::dequeue_task,
+            commands::dispatch::get_dispatch_status,
+            commands::dispatch::pause_dispatch,
+            commands::dispatch::resume_dispatch,
         ])
         .events(collect_events![
             crate::process::TaskOutput,
             crate::process::TaskExit,
+            crate::dispatch::DispatchEvent,
         ]);
 
     #[cfg(debug_assertions)]
@@ -72,6 +79,16 @@ pub fn run() {
                 match AppState::init().await {
                     Ok(state) => {
                         state.process.set_handle(handle.clone()).await;
+                        let _ = crate::dispatch::sweep::reconcile_orphans(&state.tasks).await;
+                        let worker = std::sync::Arc::new(crate::dispatch::worker::DispatchWorker::new(
+                            state.db.clone(),
+                            state.process.clone(),
+                            std::sync::Arc::new(crate::dispatch::seams::ClaudeAgentLauncher),
+                            std::sync::Arc::new(crate::dispatch::seams::GhPublisher),
+                            state.dispatch.clone(),
+                            Some(handle.clone()),
+                        ));
+                        tauri::async_runtime::spawn(worker.run());
                         handle.manage(state);
                     }
                     Err(e) => {
@@ -116,10 +133,16 @@ mod export_bindings_test {
                 commands::pr::detect_github,
                 commands::pr::render_pr_report,
                 commands::pr::create_pr,
+                commands::dispatch::enqueue_task,
+                commands::dispatch::dequeue_task,
+                commands::dispatch::get_dispatch_status,
+                commands::dispatch::pause_dispatch,
+                commands::dispatch::resume_dispatch,
             ])
             .events(collect_events![
                 crate::process::TaskOutput,
                 crate::process::TaskExit,
+                crate::dispatch::DispatchEvent,
             ]);
         builder
             .export(specta_typescript::Typescript::default(), "../lib/bindings.ts")

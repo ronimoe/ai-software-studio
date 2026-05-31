@@ -42,6 +42,7 @@ export const mockTasks: Task[] = [
     branchName: "aistudio/task-42-magic-link",
     worktreePath: "/Users/dev/.aistudio/worktrees/example-app/task-042",
     createdAt: "2026-05-15T10:00:00Z",
+    queuedAt: null,
   },
   {
     id: "task-041",
@@ -61,6 +62,7 @@ export const mockTasks: Task[] = [
     branchName: "aistudio/task-41-checkout-race",
     worktreePath: "/Users/dev/.aistudio/worktrees/example-app/task-041",
     createdAt: "2026-05-16T14:00:00Z",
+    queuedAt: null,
   },
   {
     id: "task-040",
@@ -79,6 +81,7 @@ export const mockTasks: Task[] = [
     branchName: null,
     worktreePath: null,
     createdAt: "2026-05-17T09:00:00Z",
+    queuedAt: null,
   },
   {
     id: "task-039",
@@ -95,6 +98,7 @@ export const mockTasks: Task[] = [
     branchName: "aistudio/task-39-onboarding",
     worktreePath: "/Users/dev/.aistudio/worktrees/example-app/task-039",
     createdAt: "2026-05-14T11:00:00Z",
+    queuedAt: null,
   },
   {
     id: "task-038",
@@ -111,6 +115,7 @@ export const mockTasks: Task[] = [
     branchName: "aistudio/task-38-webhook-refactor",
     worktreePath: null,
     createdAt: "2026-05-13T15:00:00Z",
+    queuedAt: null,
   },
 ];
 

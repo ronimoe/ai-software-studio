@@ -1,4 +1,5 @@
 pub mod diffs;
+pub mod dispatch;
 pub mod engines;
 pub mod pr;
 pub mod projects;

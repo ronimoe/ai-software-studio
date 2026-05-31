@@ -56,6 +56,30 @@ async fn stop_unknown_task_is_a_noop_ok() {
     runner.stop("never-spawned").await.expect("stop noop");
 }
 
+#[tokio::test]
+async fn wait_for_exit_reports_clean_exit() {
+    let runner = ProcessRunner::new();
+    runner
+        .spawn("t-exit", "sh", &["-c", "exit 0"], &std::env::temp_dir())
+        .await
+        .unwrap();
+    let info = runner.wait_for_exit("t-exit").await;
+    assert_eq!(info.exit_code, Some(0));
+    assert!(!info.stopped_by_user);
+}
+
+#[tokio::test]
+async fn wait_for_exit_reports_user_stop() {
+    let runner = ProcessRunner::new();
+    runner
+        .spawn("t-stop", "sh", &["-c", "sleep 10"], &std::env::temp_dir())
+        .await
+        .unwrap();
+    runner.stop("t-stop").await.unwrap();
+    let info = runner.wait_for_exit("t-stop").await;
+    assert!(info.stopped_by_user, "stop() must mark stopped_by_user");
+}
+
 // Suppress unused-import warnings for items only consumed by other tests.
 #[allow(unused_imports)]
 use {mpsc as _, OutputStream as _, TaskExit as _, TaskOutput as _};

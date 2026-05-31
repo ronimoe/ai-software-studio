@@ -36,6 +36,7 @@ pub fn tasks_for_project(project_id: &str) -> Vec<Task> {
             branch_name: Some("aistudio/task-42-magic-link".into()),
             worktree_path: Some("/Users/dev/.aistudio/worktrees/example-app/task-042".into()),
             created_at: "2026-05-15T10:00:00Z".into(),
+            queued_at: None,
         },
         Task {
             id: "task-041".into(),
@@ -55,6 +56,7 @@ pub fn tasks_for_project(project_id: &str) -> Vec<Task> {
             branch_name: Some("aistudio/task-41-checkout-race".into()),
             worktree_path: Some("/Users/dev/.aistudio/worktrees/example-app/task-041".into()),
             created_at: "2026-05-16T14:00:00Z".into(),
+            queued_at: None,
         },
         Task {
             id: "task-040".into(),
@@ -73,6 +75,7 @@ pub fn tasks_for_project(project_id: &str) -> Vec<Task> {
             branch_name: None,
             worktree_path: None,
             created_at: "2026-05-17T09:00:00Z".into(),
+            queued_at: None,
         },
         Task {
             id: "task-039".into(),
@@ -89,6 +92,7 @@ pub fn tasks_for_project(project_id: &str) -> Vec<Task> {
             branch_name: Some("aistudio/task-39-onboarding".into()),
             worktree_path: Some("/Users/dev/.aistudio/worktrees/example-app/task-039".into()),
             created_at: "2026-05-14T11:00:00Z".into(),
+            queued_at: None,
         },
         Task {
             id: "task-038".into(),
@@ -105,6 +109,7 @@ pub fn tasks_for_project(project_id: &str) -> Vec<Task> {
             branch_name: Some("aistudio/task-38-webhook-refactor".into()),
             worktree_path: None,
             created_at: "2026-05-13T15:00:00Z".into(),
+            queued_at: None,
         },
     ]
 }

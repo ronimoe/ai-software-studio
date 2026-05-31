@@ -30,7 +30,7 @@ impl ClaudeCodeAdapter {
     }
 }
 
-fn build_prompt(task_id: &str) -> String {
+pub(crate) fn build_prompt(task_id: &str) -> String {
     format!(
         "You are working inside a git worktree for AI Software Studio task `{task_id}`.\n\
          Read `CLAUDE.md` (in the working directory) before doing anything else.\n\

@@ -58,6 +58,7 @@ const mockImpl: Commands = {
         branchName: null,
         worktreePath: null,
         createdAt: new Date().toISOString(),
+        queuedAt: null,
       },
     };
   },
@@ -219,6 +220,34 @@ const mockImpl: Commands = {
         base: request.baseBranch ?? "main",
       },
     };
+  },
+  enqueueTask: async (taskId: string) => {
+    await sleep(60);
+    const task = mockTasks.find((t) => t.id === taskId);
+    if (!task) {
+      return { status: "error" as const, error: { code: "notFound" as const, message: `task ${taskId} not found`, details: null } };
+    }
+    return { status: "ok" as const, data: { ...task, status: "queued" as const, queuedAt: new Date().toISOString() } };
+  },
+  dequeueTask: async (taskId: string) => {
+    await sleep(60);
+    const task = mockTasks.find((t) => t.id === taskId);
+    if (!task) {
+      return { status: "error" as const, error: { code: "notFound" as const, message: `task ${taskId} not found`, details: null } };
+    }
+    return { status: "ok" as const, data: { ...task, status: "draft" as const, queuedAt: null } };
+  },
+  getDispatchStatus: async () => {
+    await sleep(30);
+    return { status: "ok" as const, data: { running: true, queued: 0, currentTask: null } };
+  },
+  pauseDispatch: async () => {
+    await sleep(20);
+    return { status: "ok" as const, data: null };
+  },
+  resumeDispatch: async () => {
+    await sleep(20);
+    return { status: "ok" as const, data: null };
   },
 };
 

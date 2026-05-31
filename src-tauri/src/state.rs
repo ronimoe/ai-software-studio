@@ -1,6 +1,7 @@
 use crate::{
     core::worktree_context::WorktreeContextService,
     db::Db,
+    dispatch::{get_autorun, DispatchHandle},
     engines::EngineService,
     error::AppError,
     git::GitService,
@@ -20,11 +21,14 @@ pub struct AppState {
     pub git: GitService,
     pub worktree_context: WorktreeContextService,
     pub process: Arc<ProcessRunner>,
+    pub dispatch: DispatchHandle,
 }
 
 impl AppState {
     pub async fn init() -> Result<Self, AppError> {
         let db = Db::init().await?;
+        let autorun = get_autorun(&db).await?;
+        let dispatch = DispatchHandle::new(!autorun);
         Ok(Self {
             tasks: TaskService::new(db.clone()),
             projects: ProjectService::new(db.clone()),
@@ -33,6 +37,7 @@ impl AppState {
             git: GitService::new(),
             worktree_context: WorktreeContextService::new(),
             process: Arc::new(ProcessRunner::new()),
+            dispatch,
             db,
         })
     }

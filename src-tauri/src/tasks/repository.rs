@@ -86,9 +86,9 @@ impl TaskRepository {
     }
 
     pub async fn get(&self, task_id: &str) -> Result<Task, AppError> {
-        let row: Option<(String, String, String, String, String, String, Option<String>, String, String, Option<String>, Option<String>, String)> = sqlx::query_as(
+        let row: Option<(String, String, String, String, String, String, Option<String>, String, String, Option<String>, Option<String>, String, Option<String>)> = sqlx::query_as(
             "SELECT id, project_id, title, description, out_of_scope, files_to_touch_hint,
-                    selected_engine, status, risk, branch_name, worktree_path, created_at
+                    selected_engine, status, risk, branch_name, worktree_path, created_at, queued_at
              FROM tasks WHERE id = ?",
         )
         .bind(task_id)
@@ -127,6 +127,7 @@ impl TaskRepository {
             branch_name: row.9,
             worktree_path: row.10,
             created_at: row.11,
+            queued_at: row.12,
             acceptance_criteria: ac_rows
                 .into_iter()
                 .map(|(id, label, satisfied)| AcceptanceCriterion { id, label, satisfied: satisfied != 0 })
@@ -169,11 +170,67 @@ impl TaskRepository {
             .map_err(|e| AppError::internal(format!("clear worktree: {e}")))?;
         Ok(())
     }
+
+    pub async fn enqueue(&self, task_id: &str) -> Result<(), AppError> {
+        sqlx::query(
+            "UPDATE tasks SET status = 'queued', queued_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?",
+        )
+        .bind(task_id)
+        .execute(&self.db.pool)
+        .await
+        .map_err(|e| AppError::internal(format!("enqueue: {e}")))?;
+        Ok(())
+    }
+
+    pub async fn dequeue(&self, task_id: &str) -> Result<(), AppError> {
+        sqlx::query("UPDATE tasks SET status = 'draft', queued_at = NULL WHERE id = ?")
+            .bind(task_id)
+            .execute(&self.db.pool)
+            .await
+            .map_err(|e| AppError::internal(format!("dequeue: {e}")))?;
+        Ok(())
+    }
+
+    pub async fn next_queued(&self) -> Result<Option<Task>, AppError> {
+        let row: Option<(String,)> = sqlx::query_as(
+            "SELECT id FROM tasks WHERE status = 'queued' ORDER BY queued_at ASC, rowid ASC LIMIT 1",
+        )
+        .fetch_optional(&self.db.pool)
+        .await
+        .map_err(|e| AppError::internal(format!("next_queued: {e}")))?;
+        match row {
+            Some((id,)) => Ok(Some(self.get(&id).await?)),
+            None => Ok(None),
+        }
+    }
+
+    pub async fn count_queued(&self) -> Result<u32, AppError> {
+        let (n,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM tasks WHERE status = 'queued'")
+            .fetch_one(&self.db.pool)
+            .await
+            .map_err(|e| AppError::internal(format!("count_queued: {e}")))?;
+        Ok(n as u32)
+    }
+
+    pub async fn ids_in_statuses(&self, statuses: &[&str]) -> Result<Vec<String>, AppError> {
+        let placeholders = statuses.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let sql = format!("SELECT id FROM tasks WHERE status IN ({placeholders})");
+        let mut q = sqlx::query_as::<_, (String,)>(&sql);
+        for s in statuses {
+            q = q.bind(*s);
+        }
+        let rows = q
+            .fetch_all(&self.db.pool)
+            .await
+            .map_err(|e| AppError::internal(format!("ids_in_statuses: {e}")))?;
+        Ok(rows.into_iter().map(|(id,)| id).collect())
+    }
 }
 
 fn serialize_status(s: TaskStatus) -> &'static str {
     match s {
         TaskStatus::Draft => "draft",
+        TaskStatus::Queued => "queued",
         TaskStatus::WorktreeCreated => "worktreeCreated",
         TaskStatus::Running => "running",
         TaskStatus::NeedsInput => "needsInput",
@@ -192,6 +249,7 @@ fn serialize_status(s: TaskStatus) -> &'static str {
 fn parse_status(s: &str) -> Result<TaskStatus, AppError> {
     Ok(match s {
         "draft" => TaskStatus::Draft,
+        "queued" => TaskStatus::Queued,
         "worktreeCreated" => TaskStatus::WorktreeCreated,
         "running" => TaskStatus::Running,
         "needsInput" => TaskStatus::NeedsInput,
