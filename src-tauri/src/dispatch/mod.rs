@@ -1,6 +1,6 @@
 pub mod seams;
 pub mod worker;
-// pub mod sweep;    <- added in a later task
+pub mod sweep;
 // #[cfg(test)] mod worker_tests;  <- added in a later task
 
 use crate::{db::Db, error::AppError};
