@@ -14,6 +14,7 @@ pub struct Project {
 #[serde(rename_all = "camelCase")]
 pub enum TaskStatus {
     Draft,
+    Queued,
     WorktreeCreated,
     Running,
     NeedsInput,
@@ -49,6 +50,7 @@ pub struct Task {
     pub branch_name: Option<String>,
     pub worktree_path: Option<String>,
     pub created_at: String,
+    pub queued_at: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]

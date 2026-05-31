@@ -22,6 +22,7 @@ fn sample_task() -> Task {
         branch_name: None,
         worktree_path: None,
         created_at: "2026-05-18".into(),
+        queued_at: None,
     }
 }
 

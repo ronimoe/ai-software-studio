@@ -22,6 +22,7 @@ fn sample_task() -> Task {
         branch_name: Some("aistudio/task-x".into()),
         worktree_path: Some("/tmp/wt".into()),
         created_at: "2026-05-18".into(),
+        queued_at: None,
     }
 }
 

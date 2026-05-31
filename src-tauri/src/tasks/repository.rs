@@ -86,9 +86,9 @@ impl TaskRepository {
     }
 
     pub async fn get(&self, task_id: &str) -> Result<Task, AppError> {
-        let row: Option<(String, String, String, String, String, String, Option<String>, String, String, Option<String>, Option<String>, String)> = sqlx::query_as(
+        let row: Option<(String, String, String, String, String, String, Option<String>, String, String, Option<String>, Option<String>, String, Option<String>)> = sqlx::query_as(
             "SELECT id, project_id, title, description, out_of_scope, files_to_touch_hint,
-                    selected_engine, status, risk, branch_name, worktree_path, created_at
+                    selected_engine, status, risk, branch_name, worktree_path, created_at, queued_at
              FROM tasks WHERE id = ?",
         )
         .bind(task_id)
@@ -127,6 +127,7 @@ impl TaskRepository {
             branch_name: row.9,
             worktree_path: row.10,
             created_at: row.11,
+            queued_at: row.12,
             acceptance_criteria: ac_rows
                 .into_iter()
                 .map(|(id, label, satisfied)| AcceptanceCriterion { id, label, satisfied: satisfied != 0 })
@@ -174,6 +175,7 @@ impl TaskRepository {
 fn serialize_status(s: TaskStatus) -> &'static str {
     match s {
         TaskStatus::Draft => "draft",
+        TaskStatus::Queued => "queued",
         TaskStatus::WorktreeCreated => "worktreeCreated",
         TaskStatus::Running => "running",
         TaskStatus::NeedsInput => "needsInput",
@@ -192,6 +194,7 @@ fn serialize_status(s: TaskStatus) -> &'static str {
 fn parse_status(s: &str) -> Result<TaskStatus, AppError> {
     Ok(match s {
         "draft" => TaskStatus::Draft,
+        "queued" => TaskStatus::Queued,
         "worktreeCreated" => TaskStatus::WorktreeCreated,
         "running" => TaskStatus::Running,
         "needsInput" => TaskStatus::NeedsInput,
