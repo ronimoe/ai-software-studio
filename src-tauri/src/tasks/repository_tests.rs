@@ -99,3 +99,28 @@ async fn update_status_persists() {
     let reloaded = repo.get(&t.id).await.expect("get");
     assert_eq!(reloaded.status, TaskStatus::WorktreeCreated);
 }
+
+#[tokio::test]
+async fn enqueue_is_fifo_and_dequeue_resets() {
+    let db = Db::test_pool().await.expect("db");
+    seed_project(&db, "proj-1").await;
+    let repo = TaskRepository::new(db);
+    let a = repo.insert(&request("proj-1", "A")).await.expect("a");
+    let b = repo.insert(&request("proj-1", "B")).await.expect("b");
+
+    repo.enqueue(&a.id).await.unwrap();
+    repo.enqueue(&b.id).await.unwrap();
+
+    // Oldest queued_at first; rowid ASC breaks ms-resolution ties deterministically.
+    let next = repo.next_queued().await.unwrap().expect("a queued task");
+    assert_eq!(next.id, a.id);
+    assert_eq!(next.status, TaskStatus::Queued);
+    assert!(next.queued_at.is_some());
+    assert_eq!(repo.count_queued().await.unwrap(), 2);
+
+    repo.dequeue(&a.id).await.unwrap();
+    let after = repo.get(&a.id).await.unwrap();
+    assert_eq!(after.status, TaskStatus::Draft);
+    assert!(after.queued_at.is_none());
+    assert_eq!(repo.count_queued().await.unwrap(), 1);
+}

@@ -52,4 +52,24 @@ impl TaskService {
     pub async fn clear_worktree(&self, task_id: &str) -> Result<(), AppError> {
         self.repo.clear_worktree(task_id).await
     }
+
+    pub async fn enqueue(&self, task_id: &str) -> Result<(), AppError> {
+        self.repo.enqueue(task_id).await
+    }
+
+    pub async fn dequeue(&self, task_id: &str) -> Result<(), AppError> {
+        self.repo.dequeue(task_id).await
+    }
+
+    pub async fn next_queued(&self) -> Result<Option<Task>, AppError> {
+        self.repo.next_queued().await
+    }
+
+    pub async fn count_queued(&self) -> Result<u32, AppError> {
+        self.repo.count_queued().await
+    }
+
+    pub async fn ids_in_statuses(&self, statuses: &[&str]) -> Result<Vec<String>, AppError> {
+        self.repo.ids_in_statuses(statuses).await
+    }
 }
