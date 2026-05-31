@@ -6,7 +6,7 @@ use std::path::PathBuf;
 /// (clean). Never auto-retries; Queued tasks are untouched (the worker drains them).
 pub async fn reconcile_orphans(tasks: &TaskService) -> Result<(), AppError> {
     let ids = tasks
-        .ids_in_statuses(&["running", "verificationRunning"])
+        .ids_in_statuses(&["worktreeCreated", "running", "verificationRunning"])
         .await?;
     for id in ids {
         let task = tasks.get(&id).await?;

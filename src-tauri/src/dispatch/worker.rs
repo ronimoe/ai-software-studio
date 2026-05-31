@@ -163,7 +163,7 @@ impl DispatchWorker {
         // Stage 3: reconcile.
         let changed = match self.git_status(&dest).await {
             Ok(c) => c,
-            Err(_) => return self.set(&task.id, TaskStatus::Stopped).await,
+            Err(_) => return self.fail(&task.id, "reconcile").await,
         };
         if changed.is_empty() {
             self.emit(&task.id, "reconcile", "no-changes");
