@@ -62,6 +62,8 @@ impl ProcessRunner {
         args: &[&str],
         cwd: &PathBuf,
     ) -> Result<(), AppError> {
+        // Clear any stale stop marker from a prior run of this id (ids are reused on retry/re-queue).
+        self.stop_requests.remove(task_id);
         if self.is_running(task_id) {
             return Err(AppError::invalid_arg(format!(
                 "task {task_id} is already running"
