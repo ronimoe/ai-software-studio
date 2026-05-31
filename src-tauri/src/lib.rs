@@ -3,6 +3,7 @@ pub mod commands;
 pub mod config;
 pub mod core;
 pub mod db;
+pub mod dispatch;
 pub mod engines;
 pub mod error;
 pub mod fixtures;
