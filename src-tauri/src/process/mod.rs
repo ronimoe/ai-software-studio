@@ -27,9 +27,18 @@ pub struct TaskExit {
     pub signaled: bool,
 }
 
+#[derive(Clone, Copy, Debug)]
+pub struct ExitInfo {
+    pub exit_code: Option<i32>,
+    pub signaled: bool,
+    pub stopped_by_user: bool,
+}
+
 pub struct ProcessRunner {
     handle: Mutex<Option<AppHandle>>,
     running: Arc<DashMap<String, Arc<Mutex<Child>>>>,
+    exits: Arc<DashMap<String, tokio::sync::watch::Receiver<Option<ExitInfo>>>>,
+    stop_requests: Arc<DashMap<String, ()>>,
 }
 
 impl ProcessRunner {
@@ -37,6 +46,8 @@ impl ProcessRunner {
         Self {
             handle: Mutex::new(None),
             running: Arc::new(DashMap::new()),
+            exits: Arc::new(DashMap::new()),
+            stop_requests: Arc::new(DashMap::new()),
         }
     }
 
@@ -76,6 +87,9 @@ impl ProcessRunner {
         let child_arc = Arc::new(Mutex::new(child));
         running.insert(task_id_owned.clone(), child_arc.clone());
 
+        let (exit_tx, exit_rx) = tokio::sync::watch::channel(None);
+        self.exits.insert(task_id_owned.clone(), exit_rx);
+
         // Forward stdout lines.
         if let Some(h) = handle_opt.clone() {
             tokio::spawn(forward_lines(stdout, task_id_owned.clone(), OutputStream::Stdout, h));
@@ -84,23 +98,24 @@ impl ProcessRunner {
         if let Some(h) = handle_opt.clone() {
             tokio::spawn(forward_lines(stderr, task_id_owned.clone(), OutputStream::Stderr, h));
         }
-        // Reaper: when the process exits, emit task-exit and unregister.
+        // Reaper: when the process exits, resolve channel, emit task-exit, and unregister.
         let handle_for_reaper = handle_opt;
         let running_for_reaper = running.clone();
+        let stop_requests = self.stop_requests.clone();
         let task_id_for_reaper = task_id_owned;
         tokio::spawn(async move {
             let mut guard = child_arc.lock().await;
             let exit = guard.wait().await;
             running_for_reaper.remove(&task_id_for_reaper);
+            let stopped_by_user = stop_requests.remove(&task_id_for_reaper).is_some();
+            let exit_code = exit.as_ref().ok().and_then(|s| s.code());
+            let signaled = exit.as_ref().ok().map(|s| s.code().is_none()).unwrap_or(false);
+            let _ = exit_tx.send(Some(ExitInfo { exit_code, signaled, stopped_by_user }));
             if let Some(h) = handle_for_reaper {
                 let payload = TaskExit {
                     task_id: task_id_for_reaper.clone(),
-                    exit_code: exit.as_ref().ok().and_then(|s| s.code()),
-                    signaled: exit
-                        .as_ref()
-                        .ok()
-                        .map(|s| s.code().is_none())
-                        .unwrap_or(false),
+                    exit_code,
+                    signaled,
                 };
                 let _ = payload.emit(&h);
             }
@@ -109,7 +124,25 @@ impl ProcessRunner {
         Ok(())
     }
 
+    /// Await the agent's exit. Returns immediately if the process already exited.
+    /// Returns a default (unknown) ExitInfo if the task was never spawned.
+    pub async fn wait_for_exit(&self, task_id: &str) -> ExitInfo {
+        let mut rx = match self.exits.get(task_id) {
+            Some(r) => r.clone(),
+            None => return ExitInfo { exit_code: None, signaled: false, stopped_by_user: false },
+        };
+        loop {
+            if let Some(info) = *rx.borrow() {
+                return info;
+            }
+            if rx.changed().await.is_err() {
+                return ExitInfo { exit_code: None, signaled: false, stopped_by_user: false };
+            }
+        }
+    }
+
     pub async fn stop(&self, task_id: &str) -> Result<(), AppError> {
+        self.stop_requests.insert(task_id.to_string(), ());
         let Some(entry) = self.running.get(task_id) else { return Ok(()); };
         let child = entry.clone();
         drop(entry); // release the dashmap shard.
