@@ -56,4 +56,11 @@ describe("DispatchControl", () => {
     fireEvent.click(screen.getByRole("switch"));
     expect(resumeMock).toHaveBeenCalled();
   });
+
+  it("shows a placeholder and disables the switch while status is loading", () => {
+    useDispatchStatusMock.mockReturnValue({ data: undefined });
+    render(<DispatchControl />);
+    expect(screen.getByText("…")).toBeInTheDocument();
+    expect(screen.getByRole("switch")).toBeDisabled();
+  });
 });

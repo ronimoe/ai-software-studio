@@ -47,4 +47,12 @@ describe("StartButton queue action", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Queue$/i }));
     expect(enqueueMock).toHaveBeenCalledWith("task-7");
   });
+
+  it("renders only the Queue button (no primary action) for changesRequested", () => {
+    render(<StartButton taskId="task-1" status="changesRequested" selectedEngine="claude-code" />);
+    expect(screen.getByRole("button", { name: /^Queue$/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /create worktree/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Start$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Stop$/i })).not.toBeInTheDocument();
+  });
 });
