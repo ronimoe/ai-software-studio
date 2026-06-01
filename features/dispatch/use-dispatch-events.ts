@@ -11,6 +11,8 @@ export function useDispatchEvents() {
       try {
         unlisten = await events.dispatchEvent.listen(() => {
           queryClient.invalidateQueries({ queryKey: ["dispatch-status"] });
+          // Intentionally broad: the event carries no projectId and the dispatcher
+          // can advance any queued task, so refresh every open ["tasks", *] list.
           queryClient.invalidateQueries({ queryKey: ["tasks"] });
         });
       } catch {
