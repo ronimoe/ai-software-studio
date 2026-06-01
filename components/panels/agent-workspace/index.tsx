@@ -31,7 +31,7 @@ export function AgentWorkspacePanel() {
       badge={task.status}
       actions={
         <div className="flex items-center gap-1">
-          <StartButton taskId={task.id} status={task.status} />
+          <StartButton taskId={task.id} status={task.status} selectedEngine={task.selectedEngine} />
         </div>
       }
     >
