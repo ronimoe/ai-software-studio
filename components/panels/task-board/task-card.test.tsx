@@ -57,4 +57,11 @@ describe("TaskCard queued state", () => {
     expect(dequeueMock).toHaveBeenCalledWith("task-040");
     expect(onSelect).not.toHaveBeenCalled();
   });
+
+  it("does not select the card when Enter is pressed on the dequeue control", () => {
+    const onSelect = vi.fn();
+    render(<TaskCard task={{ ...baseTask, status: "queued" }} active={false} onSelect={onSelect} />);
+    fireEvent.keyDown(screen.getByRole("button", { name: /remove from queue/i }), { key: "Enter" });
+    expect(onSelect).not.toHaveBeenCalled();
+  });
 });

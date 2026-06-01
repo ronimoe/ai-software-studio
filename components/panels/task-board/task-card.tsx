@@ -53,12 +53,13 @@ export function TaskCard({ task, active, onSelect }: TaskCardProps) {
             <button
               type="button"
               aria-label="Remove from queue"
-              className="ml-0.5 rounded-sm hover:bg-primary/20 disabled:opacity-50"
+              className="ml-0.5 rounded-sm hover:bg-primary/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50"
               disabled={dequeue.isPending}
               onClick={(e) => {
                 e.stopPropagation();
                 dequeue.mutate(task.id);
               }}
+              onKeyDown={(e) => e.stopPropagation()}
             >
               <X className="h-2.5 w-2.5" />
             </button>
