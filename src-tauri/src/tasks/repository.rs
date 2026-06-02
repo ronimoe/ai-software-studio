@@ -182,13 +182,18 @@ impl TaskRepository {
         Ok(())
     }
 
-    pub async fn dequeue(&self, task_id: &str) -> Result<(), AppError> {
-        sqlx::query("UPDATE tasks SET status = 'draft', queued_at = NULL WHERE id = ?")
-            .bind(task_id)
-            .execute(&self.db.pool)
-            .await
-            .map_err(|e| AppError::internal(format!("dequeue: {e}")))?;
-        Ok(())
+    /// Atomically dequeue a task only if it is still `queued`. Returns whether a
+    /// row was changed — `false` means the task was not queued (e.g. the worker
+    /// already claimed it), which lets callers avoid a read-then-write TOCTOU.
+    pub async fn dequeue(&self, task_id: &str) -> Result<bool, AppError> {
+        let res = sqlx::query(
+            "UPDATE tasks SET status = 'draft', queued_at = NULL WHERE id = ? AND status = 'queued'",
+        )
+        .bind(task_id)
+        .execute(&self.db.pool)
+        .await
+        .map_err(|e| AppError::internal(format!("dequeue: {e}")))?;
+        Ok(res.rows_affected() > 0)
     }
 
     pub async fn next_queued(&self) -> Result<Option<Task>, AppError> {
