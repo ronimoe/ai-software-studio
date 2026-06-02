@@ -118,9 +118,20 @@ async fn enqueue_is_fifo_and_dequeue_resets() {
     assert!(next.queued_at.is_some());
     assert_eq!(repo.count_queued().await.unwrap(), 2);
 
-    repo.dequeue(&a.id).await.unwrap();
+    assert!(
+        repo.dequeue(&a.id).await.unwrap(),
+        "dequeue of a queued task reports a change"
+    );
     let after = repo.get(&a.id).await.unwrap();
     assert_eq!(after.status, TaskStatus::Draft);
     assert!(after.queued_at.is_none());
     assert_eq!(repo.count_queued().await.unwrap(), 1);
+
+    // CAS: dequeuing a task that is no longer queued is a no-op and reports false,
+    // and must not clobber its current (draft) status.
+    assert!(
+        !repo.dequeue(&a.id).await.unwrap(),
+        "second dequeue is a no-op"
+    );
+    assert_eq!(repo.get(&a.id).await.unwrap().status, TaskStatus::Draft);
 }

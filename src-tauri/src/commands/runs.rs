@@ -39,12 +39,26 @@ pub async fn start_task(
     state.tasks.get(&task.id).await
 }
 
+/// Pure guard for stop eligibility — extracted so it's unit-testable without `AppState`.
+/// Only a task with a live process (Running or VerificationRunning) can be stopped;
+/// stopping anything else would incorrectly stamp it `Stopped`.
+pub(crate) fn stop_eligibility(status: TaskStatus) -> Result<(), AppError> {
+    match status {
+        TaskStatus::Running | TaskStatus::VerificationRunning => Ok(()),
+        other => Err(AppError::invalid_arg(format!(
+            "cannot stop task in status {other:?}"
+        ))),
+    }
+}
+
 #[tauri::command]
 #[specta::specta]
 pub async fn stop_task(
     state: State<'_, AppState>,
     task_id: String,
 ) -> Result<Task, AppError> {
+    let task = state.tasks.get(&task_id).await?;
+    stop_eligibility(task.status)?;
     state.process.stop(&task_id).await?;
     state.tasks.update_status(&task_id, TaskStatus::Stopped).await?;
     state.tasks.get(&task_id).await
@@ -98,4 +112,24 @@ pub async fn reconcile_after_exit(
     };
     state.tasks.update_status(&task.id, new_status).await?;
     state.tasks.get(&task.id).await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn allows_stopping_a_live_task() {
+        assert!(stop_eligibility(TaskStatus::Running).is_ok());
+        assert!(stop_eligibility(TaskStatus::VerificationRunning).is_ok());
+    }
+
+    #[test]
+    fn rejects_stopping_a_task_without_a_live_process() {
+        assert!(stop_eligibility(TaskStatus::Draft).is_err());
+        assert!(stop_eligibility(TaskStatus::Queued).is_err());
+        assert!(stop_eligibility(TaskStatus::ReviewReady).is_err());
+        assert!(stop_eligibility(TaskStatus::Stopped).is_err());
+        assert!(stop_eligibility(TaskStatus::Done).is_err());
+    }
 }

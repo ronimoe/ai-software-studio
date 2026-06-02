@@ -41,11 +41,11 @@ pub async fn enqueue_task(state: State<'_, AppState>, task_id: String) -> Result
 #[tauri::command]
 #[specta::specta]
 pub async fn dequeue_task(state: State<'_, AppState>, task_id: String) -> Result<Task, AppError> {
-    let task = state.tasks.get(&task_id).await?;
-    if task.status != TaskStatus::Queued {
+    // Atomic CAS: the UPDATE only fires while the task is still `queued`, so a
+    // worker that claims the task between a read and this call can't be clobbered.
+    if !state.tasks.dequeue(&task_id).await? {
         return Err(AppError::invalid_arg("task is not queued"));
     }
-    state.tasks.dequeue(&task_id).await?;
     state.tasks.get(&task_id).await
 }
 

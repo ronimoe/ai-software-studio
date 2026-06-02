@@ -180,7 +180,7 @@ impl DispatchWorker {
 
         // Stage 5: draft PR (one retry). Failure stops at ReviewReady (work is good).
         self.emit(&task.id, "pr", "start");
-        if !self.publish_pr_with_retry(&task, &project.default_branch, &dest).await {
+        if !self.publish_pr_with_retry(&task, &project.default_branch, &dest, &changed).await {
             self.emit(&task.id, "pr", "failed");
             return self.set(&task.id, TaskStatus::ReviewReady).await;
         }
@@ -236,15 +236,22 @@ impl DispatchWorker {
         self.verify_once(project_id, task_id, worktree).await
     }
 
-    async fn publish_once(&self, task: &Task, base: &str, worktree: &Path) -> Result<(), AppError> {
+    async fn publish_once(
+        &self,
+        task: &Task,
+        base: &str,
+        worktree: &Path,
+        changed: &[ChangedFile],
+    ) -> Result<(), AppError> {
         let branch = task
             .branch_name
             .clone()
             .ok_or_else(|| AppError::invalid_arg("task has no branch"))?;
         let runs = self.verification.list_for_task(&task.id).await?;
         let latest = runs.first().cloned();
-        let changed = self.git_status(worktree).await?;
-        let body = crate::commands::pr::report::render(task, &changed, latest.as_ref());
+        // Reuse the changed-file set the reconcile stage already computed rather than
+        // re-running `git status` here (and again on retry).
+        let body = crate::commands::pr::report::render(task, changed, latest.as_ref());
 
         let publisher = self.publisher.clone();
         let repo = worktree.to_path_buf();
@@ -265,11 +272,17 @@ impl DispatchWorker {
         Ok(())
     }
 
-    async fn publish_pr_with_retry(&self, task: &Task, base: &str, worktree: &Path) -> bool {
-        if self.publish_once(task, base, worktree).await.is_ok() {
+    async fn publish_pr_with_retry(
+        &self,
+        task: &Task,
+        base: &str,
+        worktree: &Path,
+        changed: &[ChangedFile],
+    ) -> bool {
+        if self.publish_once(task, base, worktree, changed).await.is_ok() {
             return true;
         }
         self.emit(&task.id, "pr", "retry");
-        self.publish_once(task, base, worktree).await.is_ok()
+        self.publish_once(task, base, worktree, changed).await.is_ok()
     }
 }

@@ -57,7 +57,7 @@ impl TaskService {
         self.repo.enqueue(task_id).await
     }
 
-    pub async fn dequeue(&self, task_id: &str) -> Result<(), AppError> {
+    pub async fn dequeue(&self, task_id: &str) -> Result<bool, AppError> {
         self.repo.dequeue(task_id).await
     }
 
