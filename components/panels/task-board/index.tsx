@@ -8,6 +8,7 @@ import { useTasks } from "@/features/tasks/use-tasks";
 import { useUiStore } from "@/stores/ui-store";
 import { TaskCard } from "./task-card";
 import { NewTaskDialog } from "./new-task-dialog";
+import { DispatchControl } from "./dispatch-control";
 
 export function TaskBoardPanel() {
   const activeProjectId = useUiStore((s) => s.activeProjectId);
@@ -22,16 +23,19 @@ export function TaskBoardPanel() {
         title="Task Board"
         badge="Initiative"
         actions={
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7"
-            aria-label="Add task"
-            onClick={() => setOpen(true)}
-            disabled={!activeProjectId}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <DispatchControl />
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7"
+              aria-label="Add task"
+              onClick={() => setOpen(true)}
+              disabled={!activeProjectId}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
         }
         bodyClassName="space-y-2"
       >

@@ -7,18 +7,31 @@ import {
   mockVerification,
 } from "./mock-data";
 import { sleep } from "./utils";
-import type { AppError, Result } from "./bindings";
+import type { AppError, Result, Task } from "./bindings";
 
 type Commands = typeof commands;
+
+// Dev-mode dispatch state: reactive counts only (no simulated draining / events).
+const dispatchState = { paused: false, queued: new Set<string>() };
+
+function applyDispatchOverlay(task: Task): Task {
+  if (dispatchState.queued.has(task.id)) {
+    return { ...task, status: "queued", queuedAt: task.queuedAt ?? new Date().toISOString() };
+  }
+  return task;
+}
 
 const mockImpl: Commands = {
   listProjects: async (): Promise<Result<typeof mockProjects, AppError>> => {
     await sleep(50);
     return { status: "ok", data: mockProjects };
   },
-  listTasks: async (projectId: string): Promise<Result<typeof mockTasks, AppError>> => {
+  listTasks: async (projectId: string): Promise<Result<Task[], AppError>> => {
     await sleep(50);
-    return { status: "ok", data: mockTasks.filter((t) => t.projectId === projectId) };
+    return {
+      status: "ok",
+      data: mockTasks.filter((t) => t.projectId === projectId).map(applyDispatchOverlay),
+    };
   },
   getTask: async (taskId: string) => {
     await sleep(50);
@@ -33,7 +46,7 @@ const mockImpl: Commands = {
         } satisfies AppError,
       };
     }
-    return { status: "ok", data: task };
+    return { status: "ok", data: applyDispatchOverlay(task) };
   },
   createTask: async (request) => {
     await sleep(80);
@@ -227,7 +240,8 @@ const mockImpl: Commands = {
     if (!task) {
       return { status: "error" as const, error: { code: "notFound" as const, message: `task ${taskId} not found`, details: null } };
     }
-    return { status: "ok" as const, data: { ...task, status: "queued" as const, queuedAt: new Date().toISOString() } };
+    dispatchState.queued.add(taskId);
+    return { status: "ok" as const, data: applyDispatchOverlay({ ...task, queuedAt: new Date().toISOString() }) };
   },
   dequeueTask: async (taskId: string) => {
     await sleep(60);
@@ -235,18 +249,25 @@ const mockImpl: Commands = {
     if (!task) {
       return { status: "error" as const, error: { code: "notFound" as const, message: `task ${taskId} not found`, details: null } };
     }
-    return { status: "ok" as const, data: { ...task, status: "draft" as const, queuedAt: null } };
+    dispatchState.queued.delete(taskId);
+    // Overlay is now a no-op for this id, so it reverts to its original static status.
+    return { status: "ok" as const, data: applyDispatchOverlay({ ...task, queuedAt: null }) };
   },
   getDispatchStatus: async () => {
     await sleep(30);
-    return { status: "ok" as const, data: { running: true, queued: 0, currentTask: null } };
+    return {
+      status: "ok" as const,
+      data: { running: !dispatchState.paused, queued: dispatchState.queued.size, currentTask: null },
+    };
   },
   pauseDispatch: async () => {
     await sleep(20);
+    dispatchState.paused = true;
     return { status: "ok" as const, data: null };
   },
   resumeDispatch: async () => {
     await sleep(20);
+    dispatchState.paused = false;
     return { status: "ok" as const, data: null };
   },
 };
