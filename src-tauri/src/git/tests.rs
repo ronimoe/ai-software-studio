@@ -20,7 +20,11 @@ fn init_repo() -> TempDir {
         .status()
         .expect("config name");
     std::fs::write(dir.path().join("README.md"), "hello").expect("write");
-    Command::new("git").args(["add", "."]).current_dir(dir.path()).status().expect("add");
+    Command::new("git")
+        .args(["add", "."])
+        .current_dir(dir.path())
+        .status()
+        .expect("add");
     Command::new("git")
         .args(["commit", "-m", "initial"])
         .current_dir(dir.path())
@@ -34,7 +38,9 @@ fn worktree_add_creates_directory_and_branch() {
     let repo = init_repo();
     let svc = GitService::new();
     let dest = TempDir::new().expect("dest tempdir").keep().join("wt");
-    let result = svc.worktree_add(repo.path(), "aistudio/test-branch", &dest, None).expect("add");
+    let result = svc
+        .worktree_add(repo.path(), "aistudio/test-branch", &dest, None)
+        .expect("add");
     assert_eq!(result, dest, "returns the worktree path");
     assert!(dest.exists(), "worktree dir exists");
     assert!(dest.join(".git").exists(), "worktree has .git file");
@@ -66,7 +72,8 @@ fn worktree_remove_cleans_up() {
     let repo = init_repo();
     let svc = GitService::new();
     let dest = TempDir::new().expect("dest").keep().join("wt");
-    svc.worktree_add(repo.path(), "aistudio/cleanup", &dest, None).expect("add");
+    svc.worktree_add(repo.path(), "aistudio/cleanup", &dest, None)
+        .expect("add");
     assert!(dest.exists());
     svc.worktree_remove(repo.path(), &dest).expect("remove");
     assert!(!dest.exists(), "worktree dir removed");
@@ -80,10 +87,13 @@ fn worktree_remove_is_idempotent() {
     let repo = init_repo();
     let svc = GitService::new();
     let dest = TempDir::new().expect("dest").keep().join("wt");
-    svc.worktree_add(repo.path(), "aistudio/idem", &dest, None).expect("add");
-    svc.worktree_remove(repo.path(), &dest).expect("first remove");
+    svc.worktree_add(repo.path(), "aistudio/idem", &dest, None)
+        .expect("add");
+    svc.worktree_remove(repo.path(), &dest)
+        .expect("first remove");
     // Second call on an already-removed path must succeed.
-    svc.worktree_remove(repo.path(), &dest).expect("second remove must be a no-op");
+    svc.worktree_remove(repo.path(), &dest)
+        .expect("second remove must be a no-op");
     assert!(!dest.exists());
 }
 
@@ -95,10 +105,13 @@ fn branch_delete_is_idempotent() {
     let repo = init_repo();
     let svc = GitService::new();
     let dest = TempDir::new().expect("dest").keep().join("wt");
-    svc.worktree_add(repo.path(), "aistudio/branch-del", &dest, None).expect("add");
+    svc.worktree_add(repo.path(), "aistudio/branch-del", &dest, None)
+        .expect("add");
     // Remove worktree first so the branch is no longer checked out anywhere.
-    svc.worktree_remove(repo.path(), &dest).expect("remove worktree");
-    svc.branch_delete(repo.path(), "aistudio/branch-del").expect("first delete");
+    svc.worktree_remove(repo.path(), &dest)
+        .expect("remove worktree");
+    svc.branch_delete(repo.path(), "aistudio/branch-del")
+        .expect("first delete");
     // Second call on a now-missing branch must succeed.
     svc.branch_delete(repo.path(), "aistudio/branch-del")
         .expect("second delete must be a no-op");
@@ -114,9 +127,12 @@ fn worktree_remove_does_not_leak_branch_when_rollback_calls_branch_delete_separa
     let svc = GitService::new();
     let dest = TempDir::new().expect("dest").keep().join("wt");
     let branch = "aistudio/no-leak";
-    svc.worktree_add(repo.path(), branch, &dest, None).expect("add");
-    svc.worktree_remove(repo.path(), &dest).expect("remove worktree");
-    svc.branch_delete(repo.path(), branch).expect("delete branch");
+    svc.worktree_add(repo.path(), branch, &dest, None)
+        .expect("add");
+    svc.worktree_remove(repo.path(), &dest)
+        .expect("remove worktree");
+    svc.branch_delete(repo.path(), branch)
+        .expect("delete branch");
 
     let branches = Command::new("git")
         .args(["branch", "--list", branch])
@@ -136,7 +152,8 @@ fn worktree_add_without_base_ref_uses_head() {
     let repo = init_repo();
     let svc = GitService::new();
     let dest = TempDir::new().expect("dest").keep().join("wt");
-    svc.worktree_add(repo.path(), "aistudio/head-base", &dest, None).expect("add");
+    svc.worktree_add(repo.path(), "aistudio/head-base", &dest, None)
+        .expect("add");
 
     let head_repo = Command::new("git")
         .args(["rev-parse", "HEAD"])
@@ -169,7 +186,9 @@ fn worktree_add_with_base_ref_uses_specified_ref() {
         .current_dir(repo.path())
         .output()
         .expect("rev-parse main");
-    let main_sha = String::from_utf8_lossy(&main_sha_out.stdout).trim().to_string();
+    let main_sha = String::from_utf8_lossy(&main_sha_out.stdout)
+        .trim()
+        .to_string();
 
     // Create + check out feature-x with a distinct commit so HEAD != main.
     Command::new("git")
@@ -178,7 +197,11 @@ fn worktree_add_with_base_ref_uses_specified_ref() {
         .status()
         .expect("checkout feature-x");
     std::fs::write(repo.path().join("feature.txt"), "feature").expect("write feature");
-    Command::new("git").args(["add", "."]).current_dir(repo.path()).status().expect("add");
+    Command::new("git")
+        .args(["add", "."])
+        .current_dir(repo.path())
+        .status()
+        .expect("add");
     Command::new("git")
         .args(["commit", "-m", "feature commit"])
         .current_dir(repo.path())
@@ -190,8 +213,13 @@ fn worktree_add_with_base_ref_uses_specified_ref() {
         .current_dir(repo.path())
         .output()
         .expect("rev-parse feature-x");
-    let feature_sha = String::from_utf8_lossy(&feature_sha_out.stdout).trim().to_string();
-    assert_ne!(main_sha, feature_sha, "feature-x must be distinct from main");
+    let feature_sha = String::from_utf8_lossy(&feature_sha_out.stdout)
+        .trim()
+        .to_string();
+    assert_ne!(
+        main_sha, feature_sha,
+        "feature-x must be distinct from main"
+    );
 
     let dest = TempDir::new().expect("dest").keep().join("wt");
     svc.worktree_add(repo.path(), "aistudio/with-base", &dest, Some("main"))
@@ -203,6 +231,9 @@ fn worktree_add_with_base_ref_uses_specified_ref() {
         .output()
         .expect("rev-parse wt HEAD");
     let wt_sha = String::from_utf8_lossy(&wt_head.stdout).trim().to_string();
-    assert_eq!(wt_sha, main_sha, "worktree must branch off main, not feature-x");
+    assert_eq!(
+        wt_sha, main_sha,
+        "worktree must branch off main, not feature-x"
+    );
     assert_ne!(wt_sha, feature_sha, "worktree must NOT be on feature-x");
 }

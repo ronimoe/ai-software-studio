@@ -1,13 +1,12 @@
-use crate::{
-    error::AppError,
-    process::ProcessRunner,
-};
+use crate::{error::AppError, process::ProcessRunner};
 use std::path::PathBuf;
 
 pub struct ClaudeCodeAdapter;
 
 impl ClaudeCodeAdapter {
-    pub fn id() -> &'static str { "claude-code" }
+    pub fn id() -> &'static str {
+        "claude-code"
+    }
 
     /// Spawn `claude` in the worktree. The worktree's `CLAUDE.md` carries the task brief
     /// (see Plan 3 / `WorktreeContextService`), so the argv stays minimal — just a `--print`
@@ -20,12 +19,7 @@ impl ClaudeCodeAdapter {
     ) -> Result<(), AppError> {
         let prompt = build_prompt(task_id);
         runner
-            .spawn(
-                task_id,
-                binary_path,
-                &["--print", &prompt],
-                worktree,
-            )
+            .spawn(task_id, binary_path, &["--print", &prompt], worktree)
             .await
     }
 }

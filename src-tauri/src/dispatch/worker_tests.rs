@@ -21,7 +21,10 @@ struct FakeAgent {
 }
 impl AgentLauncher for FakeAgent {
     fn command(&self, _task_id: &str) -> Result<(String, Vec<String>), AppError> {
-        Ok(("sh".to_string(), vec!["-c".to_string(), self.script.clone()]))
+        Ok((
+            "sh".to_string(),
+            vec!["-c".to_string(), self.script.clone()],
+        ))
     }
 }
 
@@ -33,8 +36,14 @@ impl PrPublisher for FakePublisher {
     fn push_branch(&self, _repo: &Path, _branch: &str) -> Result<(), AppError> {
         Ok(())
     }
-    fn create_pr(&self, _r: &Path, _t: &str, _b: &str, _base: &str, _draft: bool)
-        -> Result<String, AppError> {
+    fn create_pr(
+        &self,
+        _r: &Path,
+        _t: &str,
+        _b: &str,
+        _base: &str,
+        _draft: bool,
+    ) -> Result<String, AppError> {
         *self.calls.lock().unwrap() += 1;
         Ok("https://github.com/x/y/pull/1".to_string())
     }
@@ -75,7 +84,18 @@ async fn seed(db: &Db) -> (SeedGuard, String, String) {
     run_git(&dir, &["init", "-q", "-b", "main"]);
     std::fs::write(dir.join("README.md"), "x").unwrap();
     run_git(&dir, &["add", "."]);
-    run_git(&dir, &["-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "init"]);
+    run_git(
+        &dir,
+        &[
+            "-c",
+            "user.email=t@t",
+            "-c",
+            "user.name=t",
+            "commit",
+            "-qm",
+            "init",
+        ],
+    );
 
     let project_id = format!("proj-{}", uuid::Uuid::new_v4());
     sqlx::query("INSERT INTO projects (id, name, path, default_branch) VALUES (?, 'r', ?, 'main')")
@@ -101,7 +121,10 @@ async fn seed(db: &Db) -> (SeedGuard, String, String) {
         .unwrap();
     tasks.enqueue(&task.id).await.unwrap();
     (
-        SeedGuard { _src: src, project_id: project_id.clone() },
+        SeedGuard {
+            _src: src,
+            project_id: project_id.clone(),
+        },
         project_id,
         task.id,
     )
@@ -140,11 +163,20 @@ async fn pipeline_reaches_pr_prepared_when_changes_and_verification_passes() {
         .unwrap();
 
     let pub_fake = FakePublisher::default();
-    let w = worker(&db, FakeAgent { script: "echo hi > new.txt".into() }, pub_fake.clone());
+    let w = worker(
+        &db,
+        FakeAgent {
+            script: "echo hi > new.txt".into(),
+        },
+        pub_fake.clone(),
+    );
     let task = w.tasks.get(&task_id).await.unwrap();
     w.run_pipeline(&task).await;
 
-    assert_eq!(w.tasks.get(&task_id).await.unwrap().status, TaskStatus::PrPrepared);
+    assert_eq!(
+        w.tasks.get(&task_id).await.unwrap().status,
+        TaskStatus::PrPrepared
+    );
     assert_eq!(*pub_fake.calls.lock().unwrap(), 1);
 }
 
@@ -158,12 +190,25 @@ async fn pipeline_stops_review_ready_when_verification_fails() {
         .unwrap();
 
     let pub_fake = FakePublisher::default();
-    let w = worker(&db, FakeAgent { script: "echo hi > new.txt".into() }, pub_fake.clone());
+    let w = worker(
+        &db,
+        FakeAgent {
+            script: "echo hi > new.txt".into(),
+        },
+        pub_fake.clone(),
+    );
     let task = w.tasks.get(&task_id).await.unwrap();
     w.run_pipeline(&task).await;
 
-    assert_eq!(w.tasks.get(&task_id).await.unwrap().status, TaskStatus::ReviewReady);
-    assert_eq!(*pub_fake.calls.lock().unwrap(), 0, "no PR on red verification");
+    assert_eq!(
+        w.tasks.get(&task_id).await.unwrap().status,
+        TaskStatus::ReviewReady
+    );
+    assert_eq!(
+        *pub_fake.calls.lock().unwrap(),
+        0,
+        "no PR on red verification"
+    );
 }
 
 #[tokio::test]
@@ -181,15 +226,27 @@ async fn pipeline_stops_when_agent_leaves_clean_tree() {
     );
     let task = w.tasks.get(&task_id).await.unwrap();
     w.run_pipeline(&task).await;
-    assert_eq!(w.tasks.get(&task_id).await.unwrap().status, TaskStatus::Stopped);
+    assert_eq!(
+        w.tasks.get(&task_id).await.unwrap().status,
+        TaskStatus::Stopped
+    );
 }
 
 #[tokio::test]
 async fn pipeline_fails_after_agent_errors_twice() {
     let db = Db::test_pool().await.unwrap();
     let (_guard, _project_id, task_id) = seed(&db).await;
-    let w = worker(&db, FakeAgent { script: "exit 1".into() }, FakePublisher::default());
+    let w = worker(
+        &db,
+        FakeAgent {
+            script: "exit 1".into(),
+        },
+        FakePublisher::default(),
+    );
     let task = w.tasks.get(&task_id).await.unwrap();
     w.run_pipeline(&task).await;
-    assert_eq!(w.tasks.get(&task_id).await.unwrap().status, TaskStatus::Failed);
+    assert_eq!(
+        w.tasks.get(&task_id).await.unwrap().status,
+        TaskStatus::Failed
+    );
 }

@@ -7,7 +7,10 @@ use crate::{
 use tauri::State;
 
 /// Pure guard for queue eligibility — extracted so it's unit-testable without `AppState`.
-pub(crate) fn enqueue_eligibility(status: TaskStatus, engine: Option<&str>) -> Result<(), AppError> {
+pub(crate) fn enqueue_eligibility(
+    status: TaskStatus,
+    engine: Option<&str>,
+) -> Result<(), AppError> {
     match status {
         TaskStatus::Draft
         | TaskStatus::Stopped

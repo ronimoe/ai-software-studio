@@ -1,4 +1,7 @@
-use crate::{error::AppError, models::{EngineDetectionStatus, EngineStatus}};
+use crate::{
+    error::AppError,
+    models::{EngineDetectionStatus, EngineStatus},
+};
 use std::ffi::OsStr;
 use std::process::Command;
 

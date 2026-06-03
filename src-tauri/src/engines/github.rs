@@ -1,4 +1,7 @@
-use crate::{error::AppError, models::{GitHubAuthStatus, GitHubStatus}};
+use crate::{
+    error::AppError,
+    models::{GitHubAuthStatus, GitHubStatus},
+};
 use std::ffi::OsStr;
 use std::path::Path;
 use std::process::Command;
@@ -59,7 +62,9 @@ pub fn create_pr(
     base: &str,
     draft: bool,
 ) -> Result<String, AppError> {
-    let mut args: Vec<&str> = vec!["pr", "create", "--title", title, "--body", body, "--base", base];
+    let mut args: Vec<&str> = vec![
+        "pr", "create", "--title", title, "--body", body, "--base", base,
+    ];
     if draft {
         args.push("--draft");
     }
@@ -79,7 +84,9 @@ pub fn create_pr(
         .lines()
         .find(|l| l.contains("github.com"))
         .map(|l| l.trim().to_string())
-        .ok_or_else(|| AppError::internal(format!("gh pr create returned no URL: {}", stdout.trim())))?;
+        .ok_or_else(|| {
+            AppError::internal(format!("gh pr create returned no URL: {}", stdout.trim()))
+        })?;
     Ok(url)
 }
 
@@ -114,7 +121,9 @@ pub(super) fn which_in(name: &str, path_var: &OsStr) -> Option<String> {
                 }
             }
             #[cfg(not(unix))]
-            { return Some(candidate.to_string_lossy().into_owned()); }
+            {
+                return Some(candidate.to_string_lossy().into_owned());
+            }
         }
     }
     None

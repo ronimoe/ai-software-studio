@@ -127,7 +127,9 @@ mod tests {
 
     #[test]
     fn is_within_root_rejects_nonexistent_path_with_wrong_prefix() {
-        let phantom = std::env::temp_dir().join(unique_suffix()).join("never-created");
+        let phantom = std::env::temp_dir()
+            .join(unique_suffix())
+            .join("never-created");
         assert!(!phantom.exists(), "precondition: path does not exist");
         assert!(
             !is_within_worktree_root(&phantom),

@@ -1,6 +1,7 @@
 pub mod report;
 
-#[cfg(test)] mod report_tests;
+#[cfg(test)]
+mod report_tests;
 
 use crate::{
     error::AppError,
@@ -64,9 +65,11 @@ pub async fn create_pr(
 
     let repo_path = PathBuf::from(&worktree);
     let branch_clone = branch.clone();
-    tokio::task::spawn_blocking(move || crate::engines::github::push_branch(&repo_path, &branch_clone))
-        .await
-        .map_err(|e| AppError::internal(format!("join: {e}")))??;
+    tokio::task::spawn_blocking(move || {
+        crate::engines::github::push_branch(&repo_path, &branch_clone)
+    })
+    .await
+    .map_err(|e| AppError::internal(format!("join: {e}")))??;
 
     let runs = state.verification.list_for_task(&task.id).await?;
     let latest = runs.first().cloned();
@@ -87,7 +90,10 @@ pub async fn create_pr(
     .await
     .map_err(|e| AppError::internal(format!("join: {e}")))??;
 
-    state.tasks.update_status(&task.id, crate::models::TaskStatus::PrPrepared).await?;
+    state
+        .tasks
+        .update_status(&task.id, crate::models::TaskStatus::PrPrepared)
+        .await?;
 
     Ok(PrResult { url, branch, base })
 }

@@ -48,5 +48,8 @@ pub async fn set_verification_settings(
     project_id: String,
     settings: VerificationSettings,
 ) -> Result<(), AppError> {
-    state.verification.set_settings(&project_id, &settings).await
+    state
+        .verification
+        .set_settings(&project_id, &settings)
+        .await
 }

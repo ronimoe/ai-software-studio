@@ -73,7 +73,10 @@ pub async fn create_worktree_lifecycle(
     }
 
     // Step 3: update_status. Compensate with worktree_remove + branch_delete on failure.
-    if let Err(e) = tasks.update_status(&task.id, TaskStatus::WorktreeCreated).await {
+    if let Err(e) = tasks
+        .update_status(&task.id, TaskStatus::WorktreeCreated)
+        .await
+    {
         rollback_worktree(repo, dest, branch).await;
         return Err(e);
     }

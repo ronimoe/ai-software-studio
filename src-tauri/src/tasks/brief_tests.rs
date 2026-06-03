@@ -10,8 +10,16 @@ fn sample_task() -> Task {
         out_of_scope: "Do not touch billing".into(),
         files_to_touch_hint: "src/auth/**".into(),
         acceptance_criteria: vec![
-            AcceptanceCriterion { id: "ac1".into(), label: "Email delivered in dev".into(), satisfied: false },
-            AcceptanceCriterion { id: "ac2".into(), label: "JWT routes still pass".into(), satisfied: false },
+            AcceptanceCriterion {
+                id: "ac1".into(),
+                label: "Email delivered in dev".into(),
+                satisfied: false,
+            },
+            AcceptanceCriterion {
+                id: "ac2".into(),
+                label: "JWT routes still pass".into(),
+                satisfied: false,
+            },
         ],
         constraints: vec!["No new deps".into(), "Test suite green".into()],
         selected_engine: Some("claude-code".into()),

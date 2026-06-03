@@ -13,7 +13,9 @@ impl Default for WorktreeContextService {
 }
 
 impl WorktreeContextService {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 
     /// Idempotent: writes task-brief.md into `{worktree}/.aistudio/`, writes/updates
     /// `{worktree}/CLAUDE.md` with a managed section that @-imports the brief,
@@ -72,9 +74,13 @@ fn write_managed_claude_md(worktree: &Path, task: &Task) -> Result<(), AppError>
 }
 
 fn strip_managed_section(s: &str) -> String {
-    let Some(begin) = s.find(MANAGED_BEGIN) else { return s.to_string(); };
+    let Some(begin) = s.find(MANAGED_BEGIN) else {
+        return s.to_string();
+    };
     let after_begin = &s[begin..];
-    let Some(end_rel) = after_begin.find(MANAGED_END) else { return s.to_string(); };
+    let Some(end_rel) = after_begin.find(MANAGED_END) else {
+        return s.to_string();
+    };
     let end_abs = begin + end_rel + MANAGED_END.len();
     let mut out = String::with_capacity(s.len());
     out.push_str(&s[..begin]);
@@ -91,7 +97,10 @@ fn strip_managed_section(s: &str) -> String {
 fn ensure_gitignore_entry(worktree: &Path, entry: &str) -> Result<(), AppError> {
     let path = worktree.join(".gitignore");
     let existing = std::fs::read_to_string(&path).unwrap_or_default();
-    if existing.lines().any(|l| l.trim() == entry || l.trim() == entry.trim_end_matches('/')) {
+    if existing
+        .lines()
+        .any(|l| l.trim() == entry || l.trim() == entry.trim_end_matches('/'))
+    {
         return Ok(());
     }
     let mut new_content = existing.clone();

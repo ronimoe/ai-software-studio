@@ -25,7 +25,10 @@ async fn spawn_runs_and_reports_exit_for_simple_command() {
 
     // Wait for the script to finish + the runner's reaper to clean up.
     sleep(Duration::from_millis(800)).await;
-    assert!(!runner.is_running("task-test-1"), "should have been cleaned up");
+    assert!(
+        !runner.is_running("task-test-1"),
+        "should have been cleaned up"
+    );
 }
 
 #[tokio::test]
@@ -46,7 +49,10 @@ async fn stop_kills_a_long_running_process() {
     assert!(runner.is_running("task-stop-1"));
     runner.stop("task-stop-1").await.expect("stop");
     sleep(Duration::from_millis(300)).await;
-    assert!(!runner.is_running("task-stop-1"), "stopped process is unregistered");
+    assert!(
+        !runner.is_running("task-stop-1"),
+        "stopped process is unregistered"
+    );
 }
 
 #[tokio::test]

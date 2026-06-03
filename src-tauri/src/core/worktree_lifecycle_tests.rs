@@ -23,11 +23,23 @@ async fn lifecycle_does_not_leak_state_when_worktree_add_fails() {
         &["config", "user.email", "t@example.com"][..],
         &["config", "user.name", "Test"][..],
     ] {
-        Command::new("git").args(args).current_dir(repo_dir.path()).status().expect("git setup");
+        Command::new("git")
+            .args(args)
+            .current_dir(repo_dir.path())
+            .status()
+            .expect("git setup");
     }
     std::fs::write(repo_dir.path().join("README.md"), "x").unwrap();
-    Command::new("git").args(["add", "."]).current_dir(repo_dir.path()).status().unwrap();
-    Command::new("git").args(["commit", "-m", "init"]).current_dir(repo_dir.path()).status().unwrap();
+    Command::new("git")
+        .args(["add", "."])
+        .current_dir(repo_dir.path())
+        .status()
+        .unwrap();
+    Command::new("git")
+        .args(["commit", "-m", "init"])
+        .current_dir(repo_dir.path())
+        .status()
+        .unwrap();
 
     // Insert a project + task using the existing services.
     let project = Project {
@@ -63,19 +75,31 @@ async fn lifecycle_does_not_leak_state_when_worktree_add_fails() {
     std::fs::write(&dest, "blocker").unwrap();
 
     let result = create_worktree_lifecycle(
-        &git, &wt_ctx, &tasks, &task,
-        repo_dir.path(), &branch, &dest,
+        &git,
+        &wt_ctx,
+        &tasks,
+        &task,
+        repo_dir.path(),
+        &branch,
+        &dest,
         &project.default_branch,
-    ).await;
+    )
+    .await;
 
-    assert!(result.is_err(), "lifecycle must fail when worktree_add cannot proceed");
+    assert!(
+        result.is_err(),
+        "lifecycle must fail when worktree_add cannot proceed"
+    );
 
     // Compensating-action contract: no leaked DB state. Task is still Draft,
     // no branch/worktree_path persisted.
     let reloaded = tasks.get(&task.id).await.expect("task still exists");
     assert_eq!(reloaded.status, TaskStatus::Draft, "task status unchanged");
     assert!(reloaded.branch_name.is_none(), "no branch recorded");
-    assert!(reloaded.worktree_path.is_none(), "no worktree path recorded");
+    assert!(
+        reloaded.worktree_path.is_none(),
+        "no worktree path recorded"
+    );
 
     // Step-1 failure means `git worktree add` itself failed before ever creating
     // the branch ref, so there should be nothing to clean up — but verify the

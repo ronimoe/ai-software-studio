@@ -10,10 +10,7 @@ use tauri::State;
 
 #[tauri::command]
 #[specta::specta]
-pub async fn start_task(
-    state: State<'_, AppState>,
-    task_id: String,
-) -> Result<Task, AppError> {
+pub async fn start_task(state: State<'_, AppState>, task_id: String) -> Result<Task, AppError> {
     let task = state.tasks.get(&task_id).await?;
     match task.status {
         TaskStatus::WorktreeCreated | TaskStatus::Stopped | TaskStatus::Failed => {}
@@ -35,7 +32,10 @@ pub async fn start_task(
         .ok_or_else(|| AppError::internal("claude binary not found on PATH"))?;
 
     ClaudeCodeAdapter::start(&state.process, &task.id, &PathBuf::from(&worktree), &binary).await?;
-    state.tasks.update_status(&task.id, TaskStatus::Running).await?;
+    state
+        .tasks
+        .update_status(&task.id, TaskStatus::Running)
+        .await?;
     state.tasks.get(&task.id).await
 }
 
@@ -53,14 +53,14 @@ pub(crate) fn stop_eligibility(status: TaskStatus) -> Result<(), AppError> {
 
 #[tauri::command]
 #[specta::specta]
-pub async fn stop_task(
-    state: State<'_, AppState>,
-    task_id: String,
-) -> Result<Task, AppError> {
+pub async fn stop_task(state: State<'_, AppState>, task_id: String) -> Result<Task, AppError> {
     let task = state.tasks.get(&task_id).await?;
     stop_eligibility(task.status)?;
     state.process.stop(&task_id).await?;
-    state.tasks.update_status(&task_id, TaskStatus::Stopped).await?;
+    state
+        .tasks
+        .update_status(&task_id, TaskStatus::Stopped)
+        .await?;
     state.tasks.get(&task_id).await
 }
 
@@ -96,7 +96,10 @@ pub async fn reconcile_after_exit(
     let wt = match task.worktree_path.clone() {
         Some(p) => p,
         None => {
-            state.tasks.update_status(&task.id, TaskStatus::Stopped).await?;
+            state
+                .tasks
+                .update_status(&task.id, TaskStatus::Stopped)
+                .await?;
             return state.tasks.get(&task.id).await;
         }
     };

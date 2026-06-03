@@ -19,8 +19,7 @@ fn make_git_repo() -> TempDir {
 fn assert_paths_equivalent(actual: &str, expected: &std::path::Path) {
     let expected_str = expected.to_string_lossy();
     assert!(
-        actual.ends_with(expected_str.as_ref())
-            || expected_str.ends_with(actual),
+        actual.ends_with(expected_str.as_ref()) || expected_str.ends_with(actual),
         "expected path equivalent to {expected_str}, got {actual}"
     );
 }
@@ -67,8 +66,11 @@ async fn open_project_rejects_non_git_directory() {
     let err = open_project(&db, dir.path().to_str().unwrap())
         .await
         .expect_err("should reject");
-    assert!(err.message.to_lowercase().contains("git"),
-        "error should mention git, got: {}", err.message);
+    assert!(
+        err.message.to_lowercase().contains("git"),
+        "error should mention git, got: {}",
+        err.message
+    );
 }
 
 #[tokio::test]
@@ -77,15 +79,24 @@ async fn open_project_rejects_nonexistent_path() {
     let err = open_project(&db, "/this/path/does/not/exist/at/all")
         .await
         .expect_err("should reject");
-    assert!(err.message.to_lowercase().contains("exist")
-        || err.message.to_lowercase().contains("not found"));
+    assert!(
+        err.message.to_lowercase().contains("exist")
+            || err.message.to_lowercase().contains("not found")
+    );
 }
 
 #[tokio::test]
 async fn open_project_is_idempotent_on_same_path() {
     let db = Db::test_pool().await.expect("db");
     let repo = make_git_repo();
-    let p1 = open_project(&db, repo.path().to_str().unwrap()).await.expect("first");
-    let p2 = open_project(&db, repo.path().to_str().unwrap()).await.expect("second");
-    assert_eq!(p1.id, p2.id, "re-opening the same path should return the same project");
+    let p1 = open_project(&db, repo.path().to_str().unwrap())
+        .await
+        .expect("first");
+    let p2 = open_project(&db, repo.path().to_str().unwrap())
+        .await
+        .expect("second");
+    assert_eq!(
+        p1.id, p2.id,
+        "re-opening the same path should return the same project"
+    );
 }

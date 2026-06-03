@@ -18,7 +18,9 @@ impl Default for EngineService {
 }
 
 impl EngineService {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 
     pub async fn list(&self) -> Result<Vec<EngineStatus>, AppError> {
         // For v0.1, list and detect return the same thing.
@@ -28,8 +30,7 @@ impl EngineService {
     pub async fn detect(&self) -> Result<Vec<EngineStatus>, AppError> {
         let claude = tokio::task::spawn_blocking(detection::detect_claude)
             .await
-            .map_err(|e| AppError::internal(format!("join: {e}")))?
-            ?;
+            .map_err(|e| AppError::internal(format!("join: {e}")))??;
         Ok(vec![claude])
     }
 }

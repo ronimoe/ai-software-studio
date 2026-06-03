@@ -16,10 +16,7 @@ pub async fn list_tasks(
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_task(
-    state: State<'_, AppState>,
-    task_id: String,
-) -> Result<Task, AppError> {
+pub async fn get_task(state: State<'_, AppState>, task_id: String) -> Result<Task, AppError> {
     state.tasks.get(&task_id).await
 }
 

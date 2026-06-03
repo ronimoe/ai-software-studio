@@ -1,13 +1,13 @@
-pub mod worktree_paths;
-pub mod status;
 pub mod diff;
+pub mod status;
+pub mod worktree_paths;
 
 #[cfg(test)]
-mod tests;
+mod diff_tests;
 #[cfg(test)]
 mod status_tests;
 #[cfg(test)]
-mod diff_tests;
+mod tests;
 
 use crate::error::AppError;
 use std::path::{Path, PathBuf};
@@ -22,9 +22,14 @@ impl Default for GitService {
 }
 
 impl GitService {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 
-    pub fn status(&self, worktree: &std::path::Path) -> Result<Vec<crate::models::ChangedFile>, AppError> {
+    pub fn status(
+        &self,
+        worktree: &std::path::Path,
+    ) -> Result<Vec<crate::models::ChangedFile>, AppError> {
         status::status(worktree)
     }
 
@@ -56,8 +61,9 @@ impl GitService {
             std::fs::create_dir_all(parent)
                 .map_err(|e| AppError::internal(format!("create worktree parent: {e}")))?;
         }
-        let dest_str =
-            worktree_dir.to_str().ok_or_else(|| AppError::internal("worktree path utf-8"))?;
+        let dest_str = worktree_dir
+            .to_str()
+            .ok_or_else(|| AppError::internal("worktree path utf-8"))?;
         let mut args: Vec<&str> = vec!["worktree", "add", "-b", branch, dest_str];
         if let Some(base) = base_ref {
             args.push(base);
@@ -74,7 +80,9 @@ impl GitService {
                 "worktree",
                 "remove",
                 "--force",
-                worktree_dir.to_str().ok_or_else(|| AppError::internal("worktree path utf-8"))?,
+                worktree_dir
+                    .to_str()
+                    .ok_or_else(|| AppError::internal("worktree path utf-8"))?,
             ],
         );
         // Belt-and-suspenders: ensure the directory is gone even if git refuses.

@@ -27,7 +27,9 @@ pub struct TaskRepository {
 }
 
 impl TaskRepository {
-    pub fn new(db: Db) -> Self { Self { db } }
+    pub fn new(db: Db) -> Self {
+        Self { db }
+    }
 
     pub async fn insert(&self, req: &CreateTaskRequest) -> Result<Task, AppError> {
         let task_id = format!("task-{}", Uuid::new_v4());
@@ -123,13 +125,12 @@ impl TaskRepository {
         .await
         .map_err(|e| AppError::internal(format!("get ac: {e}")))?;
 
-        let constraint_rows: Vec<(String,)> = sqlx::query_as(
-            "SELECT body FROM task_constraints WHERE task_id = ? ORDER BY position",
-        )
-        .bind(task_id)
-        .fetch_all(&self.db.pool)
-        .await
-        .map_err(|e| AppError::internal(format!("get constraints: {e}")))?;
+        let constraint_rows: Vec<(String,)> =
+            sqlx::query_as("SELECT body FROM task_constraints WHERE task_id = ? ORDER BY position")
+                .bind(task_id)
+                .fetch_all(&self.db.pool)
+                .await
+                .map_err(|e| AppError::internal(format!("get constraints: {e}")))?;
 
         Ok(Task {
             id: row.0,
@@ -147,7 +148,11 @@ impl TaskRepository {
             queued_at: row.12,
             acceptance_criteria: ac_rows
                 .into_iter()
-                .map(|(id, label, satisfied)| AcceptanceCriterion { id, label, satisfied: satisfied != 0 })
+                .map(|(id, label, satisfied)| AcceptanceCriterion {
+                    id,
+                    label,
+                    satisfied: satisfied != 0,
+                })
                 .collect(),
             constraints: constraint_rows.into_iter().map(|(b,)| b).collect(),
         })
