@@ -30,12 +30,21 @@ async fn insert_then_list_returns_the_project() {
 #[tokio::test]
 async fn insert_duplicate_path_returns_error() {
     let (_db, repo) = fresh_repo().await;
-    repo.insert(&sample("/tmp/dup")).await.expect("first insert");
+    repo.insert(&sample("/tmp/dup"))
+        .await
+        .expect("first insert");
     let mut second = sample("/tmp/dup");
     second.id = "proj-test-2".into();
-    let err = repo.insert(&second).await.expect_err("duplicate should fail");
-    assert!(err.message.to_lowercase().contains("unique") || err.message.to_lowercase().contains("constraint"),
-        "expected unique-constraint error, got: {}", err.message);
+    let err = repo
+        .insert(&second)
+        .await
+        .expect_err("duplicate should fail");
+    assert!(
+        err.message.to_lowercase().contains("unique")
+            || err.message.to_lowercase().contains("constraint"),
+        "expected unique-constraint error, got: {}",
+        err.message
+    );
 }
 
 #[tokio::test]

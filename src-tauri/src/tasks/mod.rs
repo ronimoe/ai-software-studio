@@ -19,7 +19,9 @@ pub struct TaskService {
 
 impl TaskService {
     pub fn new(db: Db) -> Self {
-        Self { repo: TaskRepository::new(db) }
+        Self {
+            repo: TaskRepository::new(db),
+        }
     }
 
     pub async fn list_for_project(&self, project_id: &str) -> Result<Vec<Task>, AppError> {
@@ -46,7 +48,9 @@ impl TaskService {
         branch: &str,
         worktree: &str,
     ) -> Result<(), AppError> {
-        self.repo.set_branch_and_worktree(task_id, branch, worktree).await
+        self.repo
+            .set_branch_and_worktree(task_id, branch, worktree)
+            .await
     }
 
     pub async fn clear_worktree(&self, task_id: &str) -> Result<(), AppError> {

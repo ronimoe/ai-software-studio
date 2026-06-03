@@ -45,8 +45,12 @@ async fn list_for_project_returns_tasks_in_reverse_chronological_order() {
     let db = Db::test_pool().await.expect("db");
     seed_project(&db, "proj-1").await;
     let repo = TaskRepository::new(db);
-    repo.insert(&request("proj-1", "first")).await.expect("first");
-    repo.insert(&request("proj-1", "second")).await.expect("second");
+    repo.insert(&request("proj-1", "first"))
+        .await
+        .expect("first");
+    repo.insert(&request("proj-1", "second"))
+        .await
+        .expect("second");
     let list = repo.list_for_project("proj-1").await.expect("list");
     assert_eq!(list.len(), 2);
     assert_eq!(list[0].title, "second");
@@ -95,7 +99,9 @@ async fn update_status_persists() {
     seed_project(&db, "proj-1").await;
     let repo = TaskRepository::new(db);
     let t = repo.insert(&request("proj-1", "t1")).await.expect("insert");
-    repo.update_status(&t.id, TaskStatus::WorktreeCreated).await.expect("update");
+    repo.update_status(&t.id, TaskStatus::WorktreeCreated)
+        .await
+        .expect("update");
     let reloaded = repo.get(&t.id).await.expect("get");
     assert_eq!(reloaded.status, TaskStatus::WorktreeCreated);
 }

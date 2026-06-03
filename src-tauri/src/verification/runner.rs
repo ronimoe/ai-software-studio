@@ -12,7 +12,11 @@ pub struct CheckResult {
     pub log_excerpt: Option<String>,
 }
 
-pub async fn run_single(worktree: &Path, kind: &str, command: &str) -> Result<CheckResult, AppError> {
+pub async fn run_single(
+    worktree: &Path,
+    kind: &str,
+    command: &str,
+) -> Result<CheckResult, AppError> {
     if command.trim().is_empty() {
         return Ok(CheckResult {
             kind: kind.to_string(),
@@ -31,8 +35,14 @@ pub async fn run_single(worktree: &Path, kind: &str, command: &str) -> Result<Ch
         .spawn()
         .map_err(|e| AppError::internal(format!("spawn {kind}: {e}")))?;
 
-    let mut stdout = child.stdout.take().ok_or_else(|| AppError::internal("no stdout"))?;
-    let mut stderr = child.stderr.take().ok_or_else(|| AppError::internal("no stderr"))?;
+    let mut stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| AppError::internal("no stdout"))?;
+    let mut stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| AppError::internal("no stderr"))?;
     let mut buf = Vec::with_capacity(EXCERPT_BYTES * 2);
 
     let mut out_tmp = [0u8; 1024];

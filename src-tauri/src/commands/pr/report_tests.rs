@@ -1,7 +1,7 @@
 use super::report::render;
 use crate::models::{
-    AcceptanceCriterion, ChangeStatus, ChangedFile, RiskLevel, Task, TaskStatus,
-    VerificationCheck, VerificationRun, VerificationStatus,
+    AcceptanceCriterion, ChangeStatus, ChangedFile, RiskLevel, Task, TaskStatus, VerificationCheck,
+    VerificationRun, VerificationStatus,
 };
 
 fn sample_task() -> Task {
@@ -13,7 +13,9 @@ fn sample_task() -> Task {
         out_of_scope: "".into(),
         files_to_touch_hint: "".into(),
         acceptance_criteria: vec![AcceptanceCriterion {
-            id: "ac1".into(), label: "Email delivered".into(), satisfied: true,
+            id: "ac1".into(),
+            label: "Email delivered".into(),
+            satisfied: true,
         }],
         constraints: vec!["no new deps".into()],
         selected_engine: None,
@@ -37,8 +39,18 @@ fn renders_h1_title_section_header() {
 #[test]
 fn renders_files_changed_table_with_rows() {
     let files = vec![
-        ChangedFile { path: "src/a.ts".into(), status: ChangeStatus::Modified, additions: 0, deletions: 0 },
-        ChangedFile { path: "src/b.ts".into(), status: ChangeStatus::Added, additions: 0, deletions: 0 },
+        ChangedFile {
+            path: "src/a.ts".into(),
+            status: ChangeStatus::Modified,
+            additions: 0,
+            deletions: 0,
+        },
+        ChangedFile {
+            path: "src/b.ts".into(),
+            status: ChangeStatus::Added,
+            additions: 0,
+            deletions: 0,
+        },
     ];
     let r = render(&sample_task(), &files, None);
     assert!(r.contains("| File | Status |"));
@@ -53,8 +65,18 @@ fn renders_verification_table_when_run_present() {
         task_id: "task-x".into(),
         started_at: "2026-05-18".into(),
         checks: vec![
-            VerificationCheck { kind: "test".into(), status: VerificationStatus::Passed, duration_ms: Some(100), log_excerpt: None },
-            VerificationCheck { kind: "build".into(), status: VerificationStatus::Failed, duration_ms: Some(200), log_excerpt: None },
+            VerificationCheck {
+                kind: "test".into(),
+                status: VerificationStatus::Passed,
+                duration_ms: Some(100),
+                log_excerpt: None,
+            },
+            VerificationCheck {
+                kind: "build".into(),
+                status: VerificationStatus::Failed,
+                duration_ms: Some(200),
+                log_excerpt: None,
+            },
         ],
     };
     let r = render(&sample_task(), &[], Some(&run));

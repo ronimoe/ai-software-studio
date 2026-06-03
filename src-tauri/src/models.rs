@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use specta::Type;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
@@ -31,7 +31,14 @@ pub enum TaskStatus {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Type, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-pub enum RiskLevel { Safe, Sensitive, Dependency, Migration, Infra, Unknown }
+pub enum RiskLevel {
+    Safe,
+    Sensitive,
+    Dependency,
+    Migration,
+    Infra,
+    Unknown,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
@@ -63,7 +70,13 @@ pub struct AcceptanceCriterion {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Type, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-pub enum EngineDetectionStatus { NotInstalled, Detected, Ready, NotAuthenticated, Error }
+pub enum EngineDetectionStatus {
+    NotInstalled,
+    Detected,
+    Ready,
+    NotAuthenticated,
+    Error,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
@@ -77,7 +90,14 @@ pub struct EngineStatus {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Type, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-pub enum VerificationStatus { NotRun, Running, Passed, Failed, Skipped, Warning }
+pub enum VerificationStatus {
+    NotRun,
+    Running,
+    Passed,
+    Failed,
+    Skipped,
+    Warning,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
@@ -154,7 +174,11 @@ impl Default for VerificationSettings {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Type, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-pub enum GitHubAuthStatus { Authed, NotAuthed, NotInstalled }
+pub enum GitHubAuthStatus {
+    Authed,
+    NotAuthed,
+    NotInstalled,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]

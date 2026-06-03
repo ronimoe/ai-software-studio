@@ -5,12 +5,31 @@ use crate::{
 };
 use uuid::Uuid;
 
+/// Column tuple for a `tasks` row as selected in [`TaskRepository::get`].
+type TaskRow = (
+    String,
+    String,
+    String,
+    String,
+    String,
+    String,
+    Option<String>,
+    String,
+    String,
+    Option<String>,
+    Option<String>,
+    String,
+    Option<String>,
+);
+
 pub struct TaskRepository {
     db: Db,
 }
 
 impl TaskRepository {
-    pub fn new(db: Db) -> Self { Self { db } }
+    pub fn new(db: Db) -> Self {
+        Self { db }
+    }
 
     pub async fn insert(&self, req: &CreateTaskRequest) -> Result<Task, AppError> {
         let task_id = format!("task-{}", Uuid::new_v4());
@@ -86,7 +105,7 @@ impl TaskRepository {
     }
 
     pub async fn get(&self, task_id: &str) -> Result<Task, AppError> {
-        let row: Option<(String, String, String, String, String, String, Option<String>, String, String, Option<String>, Option<String>, String, Option<String>)> = sqlx::query_as(
+        let row: Option<TaskRow> = sqlx::query_as(
             "SELECT id, project_id, title, description, out_of_scope, files_to_touch_hint,
                     selected_engine, status, risk, branch_name, worktree_path, created_at, queued_at
              FROM tasks WHERE id = ?",
@@ -106,13 +125,12 @@ impl TaskRepository {
         .await
         .map_err(|e| AppError::internal(format!("get ac: {e}")))?;
 
-        let constraint_rows: Vec<(String,)> = sqlx::query_as(
-            "SELECT body FROM task_constraints WHERE task_id = ? ORDER BY position",
-        )
-        .bind(task_id)
-        .fetch_all(&self.db.pool)
-        .await
-        .map_err(|e| AppError::internal(format!("get constraints: {e}")))?;
+        let constraint_rows: Vec<(String,)> =
+            sqlx::query_as("SELECT body FROM task_constraints WHERE task_id = ? ORDER BY position")
+                .bind(task_id)
+                .fetch_all(&self.db.pool)
+                .await
+                .map_err(|e| AppError::internal(format!("get constraints: {e}")))?;
 
         Ok(Task {
             id: row.0,
@@ -130,7 +148,11 @@ impl TaskRepository {
             queued_at: row.12,
             acceptance_criteria: ac_rows
                 .into_iter()
-                .map(|(id, label, satisfied)| AcceptanceCriterion { id, label, satisfied: satisfied != 0 })
+                .map(|(id, label, satisfied)| AcceptanceCriterion {
+                    id,
+                    label,
+                    satisfied: satisfied != 0,
+                })
                 .collect(),
             constraints: constraint_rows.into_iter().map(|(b,)| b).collect(),
         })

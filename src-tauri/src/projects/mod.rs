@@ -2,9 +2,9 @@ pub mod open;
 pub mod repository;
 
 #[cfg(test)]
-mod repository_tests;
-#[cfg(test)]
 mod open_tests;
+#[cfg(test)]
+mod repository_tests;
 
 use crate::{db::Db, error::AppError, models::Project};
 use repository::ProjectRepository;
@@ -15,7 +15,9 @@ pub struct ProjectService {
 
 impl ProjectService {
     pub fn new(db: Db) -> Self {
-        Self { repo: ProjectRepository::new(db) }
+        Self {
+            repo: ProjectRepository::new(db),
+        }
     }
 
     pub async fn list(&self) -> Result<Vec<Project>, AppError> {

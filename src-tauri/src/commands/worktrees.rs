@@ -49,10 +49,7 @@ pub async fn create_worktree(
 
 #[tauri::command]
 #[specta::specta]
-pub async fn remove_worktree(
-    state: State<'_, AppState>,
-    task_id: String,
-) -> Result<(), AppError> {
+pub async fn remove_worktree(state: State<'_, AppState>, task_id: String) -> Result<(), AppError> {
     let task = state.tasks.get(&task_id).await?;
     let project = state.projects.get(&task.project_id).await?;
     let dest = match task.worktree_path {
@@ -74,7 +71,10 @@ pub async fn remove_worktree(
     let repo = std::path::PathBuf::from(&project.path);
     // Use the branch recorded on the task if present; otherwise derive it the
     // same way `create_worktree` did, so cleanup still gets the dangling ref.
-    let branch = task.branch_name.clone().unwrap_or_else(|| branch_name(&task.id));
+    let branch = task
+        .branch_name
+        .clone()
+        .unwrap_or_else(|| branch_name(&task.id));
     tokio::task::spawn_blocking(move || {
         let svc = crate::git::GitService::new();
         svc.worktree_remove(&repo, &dest)?;
@@ -85,6 +85,9 @@ pub async fn remove_worktree(
     .await
     .map_err(|e| AppError::internal(format!("join: {e}")))??;
     state.tasks.clear_worktree(&task.id).await?;
-    state.tasks.update_status(&task.id, TaskStatus::Draft).await?;
+    state
+        .tasks
+        .update_status(&task.id, TaskStatus::Draft)
+        .await?;
     Ok(())
 }

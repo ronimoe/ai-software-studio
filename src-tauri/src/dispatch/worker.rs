@@ -173,14 +173,20 @@ impl DispatchWorker {
         // Stage 4: verification (one re-run). Failure stops at ReviewReady, no PR.
         self.emit(&task.id, "verify", "start");
         self.set(&task.id, TaskStatus::VerificationRunning).await;
-        if !self.verify_with_retry(&task.project_id, &task.id, &dest).await {
+        if !self
+            .verify_with_retry(&task.project_id, &task.id, &dest)
+            .await
+        {
             self.emit(&task.id, "verify", "failed");
             return self.set(&task.id, TaskStatus::ReviewReady).await;
         }
 
         // Stage 5: draft PR (one retry). Failure stops at ReviewReady (work is good).
         self.emit(&task.id, "pr", "start");
-        if !self.publish_pr_with_retry(&task, &project.default_branch, &dest, &changed).await {
+        if !self
+            .publish_pr_with_retry(&task, &project.default_branch, &dest, &changed)
+            .await
+        {
             self.emit(&task.id, "pr", "failed");
             return self.set(&task.id, TaskStatus::ReviewReady).await;
         }
@@ -222,8 +228,15 @@ impl DispatchWorker {
     }
 
     async fn verify_once(&self, project_id: &str, task_id: &str, worktree: &Path) -> bool {
-        match self.verification.run_for_task(project_id, task_id, worktree).await {
-            Ok(run) => !run.checks.iter().any(|c| c.status == VerificationStatus::Failed),
+        match self
+            .verification
+            .run_for_task(project_id, task_id, worktree)
+            .await
+        {
+            Ok(run) => !run
+                .checks
+                .iter()
+                .any(|c| c.status == VerificationStatus::Failed),
             Err(_) => false,
         }
     }
@@ -279,10 +292,16 @@ impl DispatchWorker {
         worktree: &Path,
         changed: &[ChangedFile],
     ) -> bool {
-        if self.publish_once(task, base, worktree, changed).await.is_ok() {
+        if self
+            .publish_once(task, base, worktree, changed)
+            .await
+            .is_ok()
+        {
             return true;
         }
         self.emit(&task.id, "pr", "retry");
-        self.publish_once(task, base, worktree, changed).await.is_ok()
+        self.publish_once(task, base, worktree, changed)
+            .await
+            .is_ok()
     }
 }

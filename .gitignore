@@ -19,7 +19,6 @@ lib/bindings.ts
 
 # Rust / Tauri
 src-tauri/target/
-src-tauri/Cargo.lock
 **/*.rs.bk
 
 # Editor / OS

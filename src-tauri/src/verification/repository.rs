@@ -12,7 +12,9 @@ pub struct VerificationRepository {
 }
 
 impl VerificationRepository {
-    pub fn new(db: Db) -> Self { Self { db } }
+    pub fn new(db: Db) -> Self {
+        Self { db }
+    }
 
     pub async fn insert_run(
         &self,
@@ -20,11 +22,17 @@ impl VerificationRepository {
         checks: Vec<CheckResult>,
     ) -> Result<VerificationRun, AppError> {
         let run_id = format!("vr-{}", Uuid::new_v4());
-        let mut tx = self.db.pool.begin().await
+        let mut tx = self
+            .db
+            .pool
+            .begin()
+            .await
             .map_err(|e| AppError::internal(format!("tx: {e}")))?;
         sqlx::query("INSERT INTO verification_runs (id, task_id) VALUES (?, ?)")
-            .bind(&run_id).bind(task_id)
-            .execute(&mut *tx).await
+            .bind(&run_id)
+            .bind(task_id)
+            .execute(&mut *tx)
+            .await
             .map_err(|e| AppError::internal(format!("insert run: {e}")))?;
         for (i, c) in checks.iter().enumerate() {
             sqlx::query(
@@ -43,9 +51,12 @@ impl VerificationRepository {
         }
         sqlx::query("UPDATE verification_runs SET finished_at = datetime('now') WHERE id = ?")
             .bind(&run_id)
-            .execute(&mut *tx).await
+            .execute(&mut *tx)
+            .await
             .map_err(|e| AppError::internal(format!("finish run: {e}")))?;
-        tx.commit().await.map_err(|e| AppError::internal(format!("commit: {e}")))?;
+        tx.commit()
+            .await
+            .map_err(|e| AppError::internal(format!("commit: {e}")))?;
         self.get(&run_id).await
     }
 
@@ -65,13 +76,12 @@ impl VerificationRepository {
     }
 
     pub async fn get(&self, id: &str) -> Result<VerificationRun, AppError> {
-        let (id, task_id, started): (String, String, String) = sqlx::query_as(
-            "SELECT id, task_id, started_at FROM verification_runs WHERE id = ?",
-        )
-        .bind(id)
-        .fetch_one(&self.db.pool)
-        .await
-        .map_err(|e| AppError::internal(format!("get run: {e}")))?;
+        let (id, task_id, started): (String, String, String) =
+            sqlx::query_as("SELECT id, task_id, started_at FROM verification_runs WHERE id = ?")
+                .bind(id)
+                .fetch_one(&self.db.pool)
+                .await
+                .map_err(|e| AppError::internal(format!("get run: {e}")))?;
 
         let checks: Vec<(String, String, Option<i64>, Option<String>)> = sqlx::query_as(
             "SELECT kind, status, duration_ms, log_excerpt FROM verification_checks WHERE run_id = ? ORDER BY position",

@@ -6,10 +6,14 @@ use uuid::Uuid;
 pub async fn open_project(db: &Db, path: &str) -> Result<Project, AppError> {
     let path_obj = Path::new(path);
     if !path_obj.exists() {
-        return Err(AppError::invalid_arg(format!("path does not exist: {path}")));
+        return Err(AppError::invalid_arg(format!(
+            "path does not exist: {path}"
+        )));
     }
     if !path_obj.is_dir() {
-        return Err(AppError::invalid_arg(format!("path is not a directory: {path}")));
+        return Err(AppError::invalid_arg(format!(
+            "path is not a directory: {path}"
+        )));
     }
     let toplevel = resolve_git_toplevel(path_obj)?;
 

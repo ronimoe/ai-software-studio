@@ -45,8 +45,7 @@ impl Db {
 }
 
 fn production_db_path() -> Result<PathBuf, AppError> {
-    let base = dirs::data_dir()
-        .ok_or_else(|| AppError::internal("no platform data dir"))?;
+    let base = dirs::data_dir().ok_or_else(|| AppError::internal("no platform data dir"))?;
     Ok(base.join("AI Software Studio").join("app.db"))
 }
 

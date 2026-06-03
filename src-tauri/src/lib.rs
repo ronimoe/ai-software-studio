@@ -63,7 +63,8 @@ pub fn run() {
     #[cfg(debug_assertions)]
     specta_builder
         .export(
-            specta_typescript::Typescript::default().formatter(specta_typescript::formatter::prettier),
+            specta_typescript::Typescript::default()
+                .formatter(specta_typescript::formatter::prettier),
             "../lib/bindings.ts",
         )
         .expect("Failed to export typescript bindings");
@@ -80,14 +81,15 @@ pub fn run() {
                     Ok(state) => {
                         state.process.set_handle(handle.clone()).await;
                         let _ = crate::dispatch::sweep::reconcile_orphans(&state.tasks).await;
-                        let worker = std::sync::Arc::new(crate::dispatch::worker::DispatchWorker::new(
-                            state.db.clone(),
-                            state.process.clone(),
-                            std::sync::Arc::new(crate::dispatch::seams::ClaudeAgentLauncher),
-                            std::sync::Arc::new(crate::dispatch::seams::GhPublisher),
-                            state.dispatch.clone(),
-                            Some(handle.clone()),
-                        ));
+                        let worker =
+                            std::sync::Arc::new(crate::dispatch::worker::DispatchWorker::new(
+                                state.db.clone(),
+                                state.process.clone(),
+                                std::sync::Arc::new(crate::dispatch::seams::ClaudeAgentLauncher),
+                                std::sync::Arc::new(crate::dispatch::seams::GhPublisher),
+                                state.dispatch.clone(),
+                                Some(handle.clone()),
+                            ));
                         tauri::async_runtime::spawn(worker.run());
                         handle.manage(state);
                     }
@@ -145,7 +147,10 @@ mod export_bindings_test {
                 crate::dispatch::DispatchEvent,
             ]);
         builder
-            .export(specta_typescript::Typescript::default(), "../lib/bindings.ts")
+            .export(
+                specta_typescript::Typescript::default(),
+                "../lib/bindings.ts",
+            )
             .expect("export bindings");
     }
 }

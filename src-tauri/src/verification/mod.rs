@@ -1,10 +1,13 @@
-pub mod runner;
 pub mod repository;
+pub mod runner;
 pub mod settings;
 
-#[cfg(test)] mod runner_tests;
-#[cfg(test)] mod repository_tests;
-#[cfg(test)] mod settings_tests;
+#[cfg(test)]
+mod repository_tests;
+#[cfg(test)]
+mod runner_tests;
+#[cfg(test)]
+mod settings_tests;
 
 use crate::{
     db::Db,
@@ -37,7 +40,11 @@ impl VerificationService {
         self.settings.get_for_project(project_id).await
     }
 
-    pub async fn set_settings(&self, project_id: &str, s: &VerificationSettings) -> Result<(), AppError> {
+    pub async fn set_settings(
+        &self,
+        project_id: &str,
+        s: &VerificationSettings,
+    ) -> Result<(), AppError> {
         self.settings.set_for_project(project_id, s).await
     }
 

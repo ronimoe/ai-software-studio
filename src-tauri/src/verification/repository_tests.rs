@@ -5,11 +5,20 @@ use crate::models::VerificationStatus;
 
 async fn seed_task(db: &Db) {
     sqlx::query("INSERT INTO projects (id, name, path, default_branch) VALUES (?, ?, ?, ?)")
-        .bind("proj-1").bind("p").bind("/tmp/p").bind("main")
-        .execute(&db.pool).await.expect("seed project");
+        .bind("proj-1")
+        .bind("p")
+        .bind("/tmp/p")
+        .bind("main")
+        .execute(&db.pool)
+        .await
+        .expect("seed project");
     sqlx::query("INSERT INTO tasks (id, project_id, title) VALUES (?, ?, ?)")
-        .bind("task-1").bind("proj-1").bind("t")
-        .execute(&db.pool).await.expect("seed task");
+        .bind("task-1")
+        .bind("proj-1")
+        .bind("t")
+        .execute(&db.pool)
+        .await
+        .expect("seed task");
 }
 
 #[tokio::test]
@@ -19,8 +28,18 @@ async fn insert_run_persists_checks_in_order() {
     let repo = VerificationRepository::new(db.clone());
 
     let checks = vec![
-        CheckResult { kind: "install".into(), status: VerificationStatus::Passed, duration_ms: Some(100), log_excerpt: Some("ok".into()) },
-        CheckResult { kind: "test".into(),    status: VerificationStatus::Failed, duration_ms: Some(200), log_excerpt: Some("FAIL".into()) },
+        CheckResult {
+            kind: "install".into(),
+            status: VerificationStatus::Passed,
+            duration_ms: Some(100),
+            log_excerpt: Some("ok".into()),
+        },
+        CheckResult {
+            kind: "test".into(),
+            status: VerificationStatus::Failed,
+            duration_ms: Some(200),
+            log_excerpt: Some("FAIL".into()),
+        },
     ];
     let run = repo.insert_run("task-1", checks).await.expect("insert");
     assert!(!run.id.is_empty());
@@ -35,10 +54,33 @@ async fn list_for_task_returns_runs_newest_first() {
     let db = Db::test_pool().await.expect("db");
     seed_task(&db).await;
     let repo = VerificationRepository::new(db);
-    repo.insert_run("task-1", vec![CheckResult { kind: "test".into(), status: VerificationStatus::Passed, duration_ms: Some(10), log_excerpt: None }]).await.unwrap();
+    repo.insert_run(
+        "task-1",
+        vec![CheckResult {
+            kind: "test".into(),
+            status: VerificationStatus::Passed,
+            duration_ms: Some(10),
+            log_excerpt: None,
+        }],
+    )
+    .await
+    .unwrap();
     tokio::time::sleep(std::time::Duration::from_millis(1100)).await; // ensure datetime('now') differs
-    repo.insert_run("task-1", vec![CheckResult { kind: "test".into(), status: VerificationStatus::Failed, duration_ms: Some(10), log_excerpt: None }]).await.unwrap();
+    repo.insert_run(
+        "task-1",
+        vec![CheckResult {
+            kind: "test".into(),
+            status: VerificationStatus::Failed,
+            duration_ms: Some(10),
+            log_excerpt: None,
+        }],
+    )
+    .await
+    .unwrap();
     let runs = repo.list_for_task("task-1").await.expect("list");
     assert_eq!(runs.len(), 2);
-    assert!(matches!(runs[0].checks[0].status, VerificationStatus::Failed), "newest run first");
+    assert!(
+        matches!(runs[0].checks[0].status, VerificationStatus::Failed),
+        "newest run first"
+    );
 }

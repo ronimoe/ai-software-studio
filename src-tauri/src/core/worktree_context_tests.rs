@@ -30,7 +30,8 @@ fn sample_task() -> Task {
 fn install_creates_aistudio_dir_with_task_brief() {
     let wt = TempDir::new().expect("wt");
     let svc = WorktreeContextService::new();
-    svc.install(wt.path(), &sample_task(), "# brief").expect("install");
+    svc.install(wt.path(), &sample_task(), "# brief")
+        .expect("install");
     let brief = wt.path().join(".aistudio/task-brief.md");
     assert!(brief.exists(), "brief written into worktree");
     let body = std::fs::read_to_string(&brief).unwrap();
@@ -41,7 +42,8 @@ fn install_creates_aistudio_dir_with_task_brief() {
 fn install_creates_claude_md_with_import_reference() {
     let wt = TempDir::new().expect("wt");
     let svc = WorktreeContextService::new();
-    svc.install(wt.path(), &sample_task(), "# brief").expect("install");
+    svc.install(wt.path(), &sample_task(), "# brief")
+        .expect("install");
     let body = std::fs::read_to_string(wt.path().join("CLAUDE.md")).unwrap();
     assert!(body.contains(MANAGED_BEGIN), "managed begin marker");
     assert!(body.contains(MANAGED_END), "managed end marker");
@@ -54,12 +56,20 @@ fn install_creates_claude_md_with_import_reference() {
 #[test]
 fn install_preserves_existing_claude_md_content() {
     let wt = TempDir::new().expect("wt");
-    std::fs::write(wt.path().join("CLAUDE.md"), "# Project CLAUDE\n\nProject-level instructions.\n").unwrap();
+    std::fs::write(
+        wt.path().join("CLAUDE.md"),
+        "# Project CLAUDE\n\nProject-level instructions.\n",
+    )
+    .unwrap();
     let svc = WorktreeContextService::new();
-    svc.install(wt.path(), &sample_task(), "# brief").expect("install");
+    svc.install(wt.path(), &sample_task(), "# brief")
+        .expect("install");
     let body = std::fs::read_to_string(wt.path().join("CLAUDE.md")).unwrap();
     assert!(body.contains("# Project CLAUDE"), "existing H1 preserved");
-    assert!(body.contains("Project-level instructions."), "existing body preserved");
+    assert!(
+        body.contains("Project-level instructions."),
+        "existing body preserved"
+    );
     assert!(body.contains(MANAGED_BEGIN));
     assert!(body.contains(MANAGED_END));
 }
@@ -68,8 +78,10 @@ fn install_preserves_existing_claude_md_content() {
 fn install_replaces_existing_managed_section_on_repeat_call() {
     let wt = TempDir::new().expect("wt");
     let svc = WorktreeContextService::new();
-    svc.install(wt.path(), &sample_task(), "# brief one").expect("first install");
-    svc.install(wt.path(), &sample_task(), "# brief two").expect("second install");
+    svc.install(wt.path(), &sample_task(), "# brief one")
+        .expect("first install");
+    svc.install(wt.path(), &sample_task(), "# brief two")
+        .expect("second install");
     let body = std::fs::read_to_string(wt.path().join("CLAUDE.md")).unwrap();
     // Only one managed section.
     let begin_count = body.matches(MANAGED_BEGIN).count();
@@ -82,9 +94,12 @@ fn install_replaces_existing_managed_section_on_repeat_call() {
 fn install_adds_aistudio_to_gitignore() {
     let wt = TempDir::new().expect("wt");
     let svc = WorktreeContextService::new();
-    svc.install(wt.path(), &sample_task(), "# brief").expect("install");
+    svc.install(wt.path(), &sample_task(), "# brief")
+        .expect("install");
     let body = std::fs::read_to_string(wt.path().join(".gitignore")).unwrap();
-    assert!(body.lines().any(|l| l.trim() == ".aistudio/" || l.trim() == ".aistudio"));
+    assert!(body
+        .lines()
+        .any(|l| l.trim() == ".aistudio/" || l.trim() == ".aistudio"));
 }
 
 #[test]
@@ -92,7 +107,8 @@ fn install_does_not_duplicate_gitignore_entry() {
     let wt = TempDir::new().expect("wt");
     std::fs::write(wt.path().join(".gitignore"), "node_modules/\n.aistudio/\n").unwrap();
     let svc = WorktreeContextService::new();
-    svc.install(wt.path(), &sample_task(), "# brief").expect("install");
+    svc.install(wt.path(), &sample_task(), "# brief")
+        .expect("install");
     let body = std::fs::read_to_string(wt.path().join(".gitignore")).unwrap();
     let count = body.lines().filter(|l| l.trim() == ".aistudio/").count();
     assert_eq!(count, 1, "should not add a duplicate entry");

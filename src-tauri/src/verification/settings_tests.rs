@@ -34,8 +34,14 @@ async fn set_then_get_round_trips() {
 async fn set_overwrites_previous_values() {
     let db = Db::test_pool().await.expect("db");
     let repo = SettingsRepository::new(db);
-    let first = VerificationSettings { install: Some("first".into()), ..Default::default() };
-    let second = VerificationSettings { install: Some("second".into()), ..Default::default() };
+    let first = VerificationSettings {
+        install: Some("first".into()),
+        ..Default::default()
+    };
+    let second = VerificationSettings {
+        install: Some("second".into()),
+        ..Default::default()
+    };
     repo.set_for_project("p", &first).await.unwrap();
     repo.set_for_project("p", &second).await.unwrap();
     let got = repo.get_for_project("p").await.unwrap();

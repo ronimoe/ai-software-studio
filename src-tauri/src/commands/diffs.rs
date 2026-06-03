@@ -1,8 +1,4 @@
-use crate::{
-    error::AppError,
-    models::ChangedFile,
-    state::AppState,
-};
+use crate::{error::AppError, models::ChangedFile, state::AppState};
 use std::path::PathBuf;
 use tauri::State;
 

@@ -17,7 +17,10 @@ pub struct TaskOutput {
 
 #[derive(Clone, Copy, serde::Serialize, serde::Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
-pub enum OutputStream { Stdout, Stderr }
+pub enum OutputStream {
+    Stdout,
+    Stderr,
+}
 
 #[derive(Clone, serde::Serialize, serde::Deserialize, specta::Type, Event)]
 #[serde(rename_all = "camelCase")]
@@ -39,6 +42,12 @@ pub struct ProcessRunner {
     running: Arc<DashMap<String, Arc<Mutex<Child>>>>,
     exits: Arc<DashMap<String, tokio::sync::watch::Receiver<Option<ExitInfo>>>>,
     stop_requests: Arc<DashMap<String, ()>>,
+}
+
+impl Default for ProcessRunner {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl ProcessRunner {
@@ -80,8 +89,14 @@ impl ProcessRunner {
         let mut child = cmd
             .spawn()
             .map_err(|e| AppError::internal(format!("spawn {program}: {e}")))?;
-        let stdout = child.stdout.take().ok_or_else(|| AppError::internal("no stdout"))?;
-        let stderr = child.stderr.take().ok_or_else(|| AppError::internal("no stderr"))?;
+        let stdout = child
+            .stdout
+            .take()
+            .ok_or_else(|| AppError::internal("no stdout"))?;
+        let stderr = child
+            .stderr
+            .take()
+            .ok_or_else(|| AppError::internal("no stderr"))?;
 
         let task_id_owned = task_id.to_string();
         let handle_opt = self.handle.lock().await.clone();
@@ -94,11 +109,21 @@ impl ProcessRunner {
 
         // Forward stdout lines.
         if let Some(h) = handle_opt.clone() {
-            tokio::spawn(forward_lines(stdout, task_id_owned.clone(), OutputStream::Stdout, h));
+            tokio::spawn(forward_lines(
+                stdout,
+                task_id_owned.clone(),
+                OutputStream::Stdout,
+                h,
+            ));
         }
         // Forward stderr lines.
         if let Some(h) = handle_opt.clone() {
-            tokio::spawn(forward_lines(stderr, task_id_owned.clone(), OutputStream::Stderr, h));
+            tokio::spawn(forward_lines(
+                stderr,
+                task_id_owned.clone(),
+                OutputStream::Stderr,
+                h,
+            ));
         }
         // Reaper: when the process exits, resolve channel, emit task-exit, and unregister.
         let handle_for_reaper = handle_opt;
@@ -111,8 +136,16 @@ impl ProcessRunner {
             running_for_reaper.remove(&task_id_for_reaper);
             let stopped_by_user = stop_requests.remove(&task_id_for_reaper).is_some();
             let exit_code = exit.as_ref().ok().and_then(|s| s.code());
-            let signaled = exit.as_ref().ok().map(|s| s.code().is_none()).unwrap_or(false);
-            let _ = exit_tx.send(Some(ExitInfo { exit_code, signaled, stopped_by_user }));
+            let signaled = exit
+                .as_ref()
+                .ok()
+                .map(|s| s.code().is_none())
+                .unwrap_or(false);
+            let _ = exit_tx.send(Some(ExitInfo {
+                exit_code,
+                signaled,
+                stopped_by_user,
+            }));
             if let Some(h) = handle_for_reaper {
                 let payload = TaskExit {
                     task_id: task_id_for_reaper.clone(),
@@ -131,21 +164,33 @@ impl ProcessRunner {
     pub async fn wait_for_exit(&self, task_id: &str) -> ExitInfo {
         let mut rx = match self.exits.get(task_id) {
             Some(r) => r.clone(),
-            None => return ExitInfo { exit_code: None, signaled: false, stopped_by_user: false },
+            None => {
+                return ExitInfo {
+                    exit_code: None,
+                    signaled: false,
+                    stopped_by_user: false,
+                }
+            }
         };
         loop {
             if let Some(info) = *rx.borrow() {
                 return info;
             }
             if rx.changed().await.is_err() {
-                return ExitInfo { exit_code: None, signaled: false, stopped_by_user: false };
+                return ExitInfo {
+                    exit_code: None,
+                    signaled: false,
+                    stopped_by_user: false,
+                };
             }
         }
     }
 
     pub async fn stop(&self, task_id: &str) -> Result<(), AppError> {
         self.stop_requests.insert(task_id.to_string(), ());
-        let Some(entry) = self.running.get(task_id) else { return Ok(()); };
+        let Some(entry) = self.running.get(task_id) else {
+            return Ok(());
+        };
         let child = entry.clone();
         drop(entry); // release the dashmap shard.
 
@@ -186,7 +231,11 @@ async fn forward_lines<R: tokio::io::AsyncRead + Unpin + Send + 'static>(
     use tokio::io::{AsyncBufReadExt, BufReader};
     let mut lines = BufReader::new(reader).lines();
     while let Ok(Some(text)) = lines.next_line().await {
-        let payload = TaskOutput { task_id: task_id.clone(), stream, text };
+        let payload = TaskOutput {
+            task_id: task_id.clone(),
+            stream,
+            text,
+        };
         let _ = payload.emit(&handle);
     }
 }

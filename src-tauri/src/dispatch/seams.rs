@@ -24,8 +24,14 @@ impl AgentLauncher for ClaudeAgentLauncher {
 /// Pushes a branch and opens a PR. A seam so tests don't shell out to real `gh`.
 pub trait PrPublisher: Send + Sync {
     fn push_branch(&self, repo: &Path, branch: &str) -> Result<(), AppError>;
-    fn create_pr(&self, repo: &Path, title: &str, body: &str, base: &str, draft: bool)
-        -> Result<String, AppError>;
+    fn create_pr(
+        &self,
+        repo: &Path,
+        title: &str,
+        body: &str,
+        base: &str,
+        draft: bool,
+    ) -> Result<String, AppError>;
 }
 
 pub struct GhPublisher;
@@ -34,8 +40,14 @@ impl PrPublisher for GhPublisher {
     fn push_branch(&self, repo: &Path, branch: &str) -> Result<(), AppError> {
         crate::engines::github::push_branch(repo, branch)
     }
-    fn create_pr(&self, repo: &Path, title: &str, body: &str, base: &str, draft: bool)
-        -> Result<String, AppError> {
+    fn create_pr(
+        &self,
+        repo: &Path,
+        title: &str,
+        body: &str,
+        base: &str,
+        draft: bool,
+    ) -> Result<String, AppError> {
         crate::engines::github::create_pr(repo, title, body, base, draft)
     }
 }
@@ -49,5 +61,7 @@ pub async fn launch_agent(
 ) -> Result<(), AppError> {
     let (program, args) = launcher.command(task_id)?;
     let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
-    runner.spawn(task_id, &program, &arg_refs, &worktree.to_path_buf()).await
+    runner
+        .spawn(task_id, &program, &arg_refs, &worktree.to_path_buf())
+        .await
 }

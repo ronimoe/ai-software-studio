@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use specta::Type;
 use thiserror::Error;
 
@@ -23,18 +23,34 @@ pub struct AppError {
 
 impl AppError {
     pub fn not_found(message: impl Into<String>) -> Self {
-        Self { code: AppErrorCode::NotFound, message: message.into(), details: None }
+        Self {
+            code: AppErrorCode::NotFound,
+            message: message.into(),
+            details: None,
+        }
     }
 
     pub fn invalid_arg(message: impl Into<String>) -> Self {
-        Self { code: AppErrorCode::InvalidArg, message: message.into(), details: None }
+        Self {
+            code: AppErrorCode::InvalidArg,
+            message: message.into(),
+            details: None,
+        }
     }
 
     pub fn internal(message: impl Into<String>) -> Self {
-        Self { code: AppErrorCode::Internal, message: message.into(), details: None }
+        Self {
+            code: AppErrorCode::Internal,
+            message: message.into(),
+            details: None,
+        }
     }
 
     pub fn unimplemented(message: impl Into<String>) -> Self {
-        Self { code: AppErrorCode::Unimplemented, message: message.into(), details: None }
+        Self {
+            code: AppErrorCode::Unimplemented,
+            message: message.into(),
+            details: None,
+        }
     }
 }

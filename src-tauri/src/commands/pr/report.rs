@@ -1,7 +1,11 @@
 use crate::models::{ChangedFile, Task, VerificationRun, VerificationStatus};
 use std::fmt::Write as _;
 
-pub fn render(task: &Task, changed: &[ChangedFile], latest_run: Option<&VerificationRun>) -> String {
+pub fn render(
+    task: &Task,
+    changed: &[ChangedFile],
+    latest_run: Option<&VerificationRun>,
+) -> String {
     let mut out = String::new();
     writeln!(out, "# AI Software Studio Evidence Report").unwrap();
     writeln!(out).unwrap();
@@ -58,7 +62,10 @@ pub fn render(task: &Task, changed: &[ChangedFile], latest_run: Option<&Verifica
                     VerificationStatus::Running => "⏳ running",
                     VerificationStatus::NotRun => "— not run",
                 };
-                let dur = c.duration_ms.map(|m| format!("{m}ms")).unwrap_or_else(|| "—".to_string());
+                let dur = c
+                    .duration_ms
+                    .map(|m| format!("{m}ms"))
+                    .unwrap_or_else(|| "—".to_string());
                 writeln!(out, "| {} | {} | {} |", c.kind, badge, dur).unwrap();
             }
         }

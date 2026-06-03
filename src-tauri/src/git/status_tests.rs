@@ -5,12 +5,32 @@ use tempfile::TempDir;
 
 fn init_repo() -> TempDir {
     let dir = TempDir::new().expect("tempdir");
-    Command::new("git").args(["init", "--initial-branch=main"]).current_dir(dir.path()).status().expect("init");
-    Command::new("git").args(["config", "user.email", "t@e.com"]).current_dir(dir.path()).status().expect("email");
-    Command::new("git").args(["config", "user.name", "T"]).current_dir(dir.path()).status().expect("name");
+    Command::new("git")
+        .args(["init", "--initial-branch=main"])
+        .current_dir(dir.path())
+        .status()
+        .expect("init");
+    Command::new("git")
+        .args(["config", "user.email", "t@e.com"])
+        .current_dir(dir.path())
+        .status()
+        .expect("email");
+    Command::new("git")
+        .args(["config", "user.name", "T"])
+        .current_dir(dir.path())
+        .status()
+        .expect("name");
     std::fs::write(dir.path().join("a.txt"), "alpha\n").unwrap();
-    Command::new("git").args(["add", "."]).current_dir(dir.path()).status().expect("add");
-    Command::new("git").args(["commit", "-m", "init"]).current_dir(dir.path()).status().expect("commit");
+    Command::new("git")
+        .args(["add", "."])
+        .current_dir(dir.path())
+        .status()
+        .expect("add");
+    Command::new("git")
+        .args(["commit", "-m", "init"])
+        .current_dir(dir.path())
+        .status()
+        .expect("commit");
     dir
 }
 
@@ -35,7 +55,11 @@ fn status_reports_modified_file() {
 fn status_reports_added_file() {
     let repo = init_repo();
     std::fs::write(repo.path().join("b.txt"), "bravo\n").unwrap();
-    Command::new("git").args(["add", "b.txt"]).current_dir(repo.path()).status().expect("add");
+    Command::new("git")
+        .args(["add", "b.txt"])
+        .current_dir(repo.path())
+        .status()
+        .expect("add");
     let out = status(repo.path()).expect("status");
     assert_eq!(out.len(), 1);
     assert_eq!(out[0].path, "b.txt");

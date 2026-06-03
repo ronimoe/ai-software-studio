@@ -1,4 +1,7 @@
-use crate::{error::AppError, models::{ChangeStatus, ChangedFile}};
+use crate::{
+    error::AppError,
+    models::{ChangeStatus, ChangedFile},
+};
 use std::path::Path;
 use std::process::Command;
 

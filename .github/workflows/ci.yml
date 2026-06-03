@@ -61,3 +61,88 @@ jobs:
 
       - name: Build frontend
         run: pnpm build
+
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src-tauri
+    steps:
+      - uses: actions/checkout@v6
+
+      # Toolchain (channel + rustfmt/clippy components) is pinned by
+      # rust-toolchain.toml; `rustup show` auto-installs it.
+      - name: Set up Rust toolchain
+        run: |
+          rustup show
+          rustup component add rustfmt clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install Linux Tauri prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      # `cargo clippy`/`test` compile the non-test lib, which expands
+      # `tauri::generate_context!` and requires `frontendDist` (../out) to exist.
+      # The frontend job produces the real bundle; an empty dir is enough to
+      # satisfy the macro for linting and testing the Rust crate in isolation.
+      - name: Create placeholder frontend dist
+        run: mkdir -p ../out
+
+      - name: Rustfmt
+        run: cargo fmt --all --check
+
+      - name: Clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Test
+        run: cargo test
+
+  audit:
+    name: audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src-tauri
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
+
+      - name: Audit Rust dependencies for known advisories
+        # Run from src-tauri so cargo-audit finds Cargo.lock and auto-discovers
+        # .cargo/audit.toml (documented advisory ignores).
+        run: cargo audit
+
+  # Single aggregate gate to require in branch protection. Stays stable even if
+  # the matrix above changes (unlike requiring each "frontend (os)" leg by name).
+  ci:
+    name: CI passed
+    if: always()
+    needs: [frontend, backend, audit]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify all required jobs succeeded
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        env:
+          FRONTEND_RESULT: ${{ needs.frontend.result }}
+          BACKEND_RESULT: ${{ needs.backend.result }}
+          AUDIT_RESULT: ${{ needs.audit.result }}
+        run: |
+          echo "A required CI job did not succeed:"
+          echo "  frontend: $FRONTEND_RESULT"
+          echo "  backend:  $BACKEND_RESULT"
+          echo "  audit:    $AUDIT_RESULT"
+          exit 1
+      - run: echo "All required CI jobs passed."
