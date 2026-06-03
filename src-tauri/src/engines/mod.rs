@@ -11,6 +11,12 @@ use crate::{error::AppError, models::EngineStatus};
 
 pub struct EngineService;
 
+impl Default for EngineService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl EngineService {
     pub fn new() -> Self { Self }
 

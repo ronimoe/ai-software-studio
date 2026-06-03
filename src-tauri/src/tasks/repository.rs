@@ -5,6 +5,23 @@ use crate::{
 };
 use uuid::Uuid;
 
+/// Column tuple for a `tasks` row as selected in [`TaskRepository::get`].
+type TaskRow = (
+    String,
+    String,
+    String,
+    String,
+    String,
+    String,
+    Option<String>,
+    String,
+    String,
+    Option<String>,
+    Option<String>,
+    String,
+    Option<String>,
+);
+
 pub struct TaskRepository {
     db: Db,
 }
@@ -86,7 +103,7 @@ impl TaskRepository {
     }
 
     pub async fn get(&self, task_id: &str) -> Result<Task, AppError> {
-        let row: Option<(String, String, String, String, String, String, Option<String>, String, String, Option<String>, Option<String>, String, Option<String>)> = sqlx::query_as(
+        let row: Option<TaskRow> = sqlx::query_as(
             "SELECT id, project_id, title, description, out_of_scope, files_to_touch_hint,
                     selected_engine, status, risk, branch_name, worktree_path, created_at, queued_at
              FROM tasks WHERE id = ?",

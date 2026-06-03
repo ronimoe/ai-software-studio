@@ -6,6 +6,12 @@ pub const MANAGED_END: &str = "<!-- aistudio:end -->";
 
 pub struct WorktreeContextService;
 
+impl Default for WorktreeContextService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl WorktreeContextService {
     pub fn new() -> Self { Self }
 

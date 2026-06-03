@@ -41,6 +41,12 @@ pub struct ProcessRunner {
     stop_requests: Arc<DashMap<String, ()>>,
 }
 
+impl Default for ProcessRunner {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ProcessRunner {
     pub fn new() -> Self {
         Self {

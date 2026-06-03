@@ -15,6 +15,12 @@ use std::process::Command;
 
 pub struct GitService;
 
+impl Default for GitService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GitService {
     pub fn new() -> Self { Self }
 

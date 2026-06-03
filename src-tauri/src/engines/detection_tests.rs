@@ -1,62 +1,47 @@
-use super::detection::detect_claude;
+use super::detection::detect_claude_on_path;
 use crate::models::EngineDetectionStatus;
-use std::env;
+use std::ffi::OsString;
 use std::os::unix::fs::PermissionsExt;
-use std::sync::Mutex;
 use tempfile::TempDir;
 
-// Serializes PATH mutations across the tests in this module so cargo's default
-// parallel runner can't race them. Poison-safe via into_inner().
-static PATH_LOCK: Mutex<()> = Mutex::new(());
-
-/// Make a fake `claude` script on PATH that prints a version string, return the temp dir
-/// (holding the binary) and the previous PATH so the caller can restore it.
-fn with_fake_claude<F: FnOnce()>(version_output: &str, body: F) {
-    let _guard = PATH_LOCK.lock().unwrap_or_else(|p| p.into_inner());
+/// Create a fake `claude` script in a fresh temp dir and return the dir so the
+/// caller can build a `PATH` pointing at it. No global env mutation, so these
+/// tests can't race other parallel tests that spawn subprocesses.
+fn fake_claude(version_output: &str) -> TempDir {
     let dir = TempDir::new().expect("tempdir");
     let bin = dir.path().join("claude");
     let script = format!("#!/bin/sh\necho '{version_output}'\n");
     std::fs::write(&bin, script).expect("write fake claude");
     std::fs::set_permissions(&bin, std::fs::Permissions::from_mode(0o755)).expect("chmod");
-
-    let prev = env::var("PATH").unwrap_or_default();
-    let new = format!("{}:{}", dir.path().display(), prev);
-    // SAFETY for the test: this process changes PATH for the duration of the body only.
-    unsafe { env::set_var("PATH", &new); }
-    body();
-    unsafe { env::set_var("PATH", &prev); }
+    dir
 }
 
 #[test]
 fn detect_claude_returns_ready_when_binary_on_path() {
-    with_fake_claude("claude version 0.99.0", || {
-        let s = detect_claude().expect("detect");
-        assert!(matches!(s.status, EngineDetectionStatus::Ready));
-        assert!(s.binary_path.as_deref().unwrap_or("").ends_with("claude"));
-        assert_eq!(s.version.as_deref(), Some("0.99.0"));
-    });
+    let dir = fake_claude("claude version 0.99.0");
+    let path = OsString::from(dir.path());
+    let s = detect_claude_on_path(Some(&path)).expect("detect");
+    assert!(matches!(s.status, EngineDetectionStatus::Ready));
+    assert!(s.binary_path.as_deref().unwrap_or("").ends_with("claude"));
+    assert_eq!(s.version.as_deref(), Some("0.99.0"));
 }
 
 #[test]
 fn detect_claude_returns_not_installed_when_missing() {
-    let _guard = PATH_LOCK.lock().unwrap_or_else(|p| p.into_inner());
-    let prev = env::var("PATH").unwrap_or_default();
-    // SAFETY: scoped to this test; restored before return.
-    unsafe { env::set_var("PATH", "/nonexistent/path/only"); }
-    let s = detect_claude().expect("detect");
+    let path = OsString::from("/nonexistent/path/only");
+    let s = detect_claude_on_path(Some(&path)).expect("detect");
     assert!(matches!(s.status, EngineDetectionStatus::NotInstalled));
     assert!(s.binary_path.is_none());
     assert!(s.version.is_none());
-    unsafe { env::set_var("PATH", &prev); }
 }
 
 #[test]
 fn detect_claude_handles_unknown_version_output_gracefully() {
-    with_fake_claude("totally unparseable garbage", || {
-        let s = detect_claude().expect("detect");
-        // Binary is found, but we couldn't parse a version → Detected, not Ready.
-        assert!(matches!(s.status, EngineDetectionStatus::Detected));
-        assert!(s.binary_path.is_some());
-        assert!(s.version.is_none());
-    });
+    let dir = fake_claude("totally unparseable garbage");
+    let path = OsString::from(dir.path());
+    let s = detect_claude_on_path(Some(&path)).expect("detect");
+    // Binary is found, but we couldn't parse a version → Detected, not Ready.
+    assert!(matches!(s.status, EngineDetectionStatus::Detected));
+    assert!(s.binary_path.is_some());
+    assert!(s.version.is_none());
 }
