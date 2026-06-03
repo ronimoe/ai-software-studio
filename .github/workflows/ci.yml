@@ -110,6 +110,9 @@ jobs:
   audit:
     name: audit
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src-tauri
     steps:
       - uses: actions/checkout@v6
 
@@ -118,7 +121,9 @@ jobs:
           tool: cargo-audit
 
       - name: Audit Rust dependencies for known advisories
-        run: cargo audit --file src-tauri/Cargo.lock
+        # Run from src-tauri so cargo-audit finds Cargo.lock and auto-discovers
+        # .cargo/audit.toml (documented advisory ignores).
+        run: cargo audit
 
   # Single aggregate gate to require in branch protection. Stays stable even if
   # the matrix above changes (unlike requiring each "frontend (os)" leg by name).

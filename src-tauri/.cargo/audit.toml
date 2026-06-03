@@ -1,0 +1,12 @@
+# cargo-audit configuration (https://github.com/rustsec/rustsec/tree/main/cargo-audit)
+
+[advisories]
+ignore = [
+  # rsa 0.9.x — RUSTSEC-2023-0071 (Marvin Attack, timing side-channel).
+  # No fixed release exists upstream. rsa enters Cargo.lock only as an
+  # (unenabled) transitive of sqlx-mysql; we use the sqlite driver only, so
+  # `cargo tree -i rsa --target all` is empty — rsa is never compiled or
+  # linked into the app. Lockfile-only, not exploitable here.
+  # Revisit if an rsa fix ships or we add a MySQL/Postgres driver.
+  "RUSTSEC-2023-0071",
+]
