@@ -9,4 +9,53 @@ ignore = [
   # linked into the app. Lockfile-only, not exploitable here.
   # Revisit if an rsa fix ships or we add a MySQL/Postgres driver.
   "RUSTSEC-2023-0071",
+
+  # quick-xml 0.39.4 — RUSTSEC-2026-0194 / RUSTSEC-2026-0195 (DoS: quadratic
+  # attribute scan, unbounded namespace allocation). Reached only via
+  # wayland-scanner -> wl-clipboard-rs -> arboard -> tauri-plugin-clipboard-manager,
+  # where quick-xml parses vendor-bundled Wayland protocol XML at compile
+  # time (proc-macro codegen), never attacker-controlled input at runtime.
+  # wayland-scanner and arboard are already at latest upstream; no newer
+  # release exists to pick up quick-xml >=0.41. plist 1.10.0 already pulls
+  # a second, patched quick-xml 0.41.0 copy for its own use.
+  # Revisit when wayland-scanner bumps its quick-xml requirement.
+  "RUSTSEC-2026-0194",
+  "RUSTSEC-2026-0195",
+
+  # GTK3 gtk-rs bindings (glib, glib-macros' proc-macro-error dep, atk, gdk,
+  # gdkx11, gtk, gtk3-macros and their -sys crates) — unmaintained, plus
+  # RUSTSEC-2024-0429 (unsoundness in glib::VariantStrIter iterator impls).
+  # Pulled in transitively via muda (Tauri's native menu crate) -> tauri, for
+  # Linux GTK3/webkit2gtk menu support. No fix available: Tauri's Linux menu
+  # stack has not migrated off GTK3 gtk-rs bindings upstream.
+  # Revisit when tauri/muda drops the GTK3 gtk-rs dependency.
+  "RUSTSEC-2024-0429", # glib: unsound VariantStrIter
+  "RUSTSEC-2024-0411", # gdkwayland-sys: unmaintained
+  "RUSTSEC-2024-0412", # gdk: unmaintained
+  "RUSTSEC-2024-0413", # atk: unmaintained
+  "RUSTSEC-2024-0414", # gdkx11-sys: unmaintained
+  "RUSTSEC-2024-0415", # gtk: unmaintained
+  "RUSTSEC-2024-0416", # atk-sys: unmaintained
+  "RUSTSEC-2024-0417", # gdkx11: unmaintained
+  "RUSTSEC-2024-0418", # gdk-sys: unmaintained
+  "RUSTSEC-2024-0419", # gtk3-macros: unmaintained
+  "RUSTSEC-2024-0420", # gtk-sys: unmaintained
+  "RUSTSEC-2024-0370", # proc-macro-error: unmaintained (via glib-macros)
+
+  # paste 1.0.15 — RUSTSEC-2024-0436, unmaintained proc-macro helper.
+  # Transitive via specta -> tauri-specta, used for TS binding codegen.
+  # No fix available until specta migrates off it.
+  # Revisit when specta drops its paste dependency.
+  "RUSTSEC-2024-0436",
+
+  # unic-* Unicode crates (unic-common, unic-char-property, unic-char-range,
+  # unic-ucd-ident, unic-ucd-version) — all unmaintained. Transitive via
+  # urlpattern -> tauri-utils -> tauri. No fix available until urlpattern
+  # migrates off the unic-* crates (e.g. to icu4x).
+  # Revisit when tauri-utils/urlpattern drops the unic-* dependency.
+  "RUSTSEC-2025-0080", # unic-common
+  "RUSTSEC-2025-0081", # unic-char-property
+  "RUSTSEC-2025-0075", # unic-char-range
+  "RUSTSEC-2025-0100", # unic-ucd-ident
+  "RUSTSEC-2025-0098", # unic-ucd-version
 ]
